@@ -19,7 +19,7 @@ public class FinancialProfile {
   @Column(nullable = false) private BigDecimal otherExpense = BigDecimal.ZERO;
   @Column(nullable = false) private BigDecimal existingEmi = BigDecimal.ZERO;
   @Column(nullable = false) private BigDecimal currentSavings = BigDecimal.ZERO;
-  @Column(nullable = false) private BigDecimal emergencyFundTarget = new BigDecimal("150000");
+  @Column(nullable = false) private BigDecimal emergencyFundTarget = BigDecimal.ZERO;
   @Column(nullable = false) private String currency = "INR";
   @Enumerated(EnumType.STRING) private RiskTolerance riskTolerance = RiskTolerance.MODERATE;
   @Enumerated(EnumType.STRING) private SavingPriority savingPriority = SavingPriority.GOAL_FIRST;
