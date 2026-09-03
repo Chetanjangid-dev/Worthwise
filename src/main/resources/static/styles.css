@@ -419,6 +419,10 @@ textarea.input{ resize: vertical; min-height: 84px; }
 .verdict-word.alt{ color: var(--alt); }
 .verdict-support{ max-width: 520px; margin: 0 auto; color: var(--ink-muted); font-size: 15px; line-height:1.6; }
 
+.ai-response-card{ background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(236,72,153,0.05)); border: 1px solid rgba(99,102,241,0.18); }
+.ai-response-head{ display:flex; align-items:center; margin-bottom: 10px; }
+.ai-response-text{ font-size: 16px; line-height: 1.7; color: var(--ink); margin: 0; }
+
 /* ---- why this decision ---- */
 .reason-row{ display:flex; gap:12px; padding: 13px 4px; border-bottom: 1px solid var(--border); align-items:flex-start; }
 .reason-row:last-child{ border-bottom:none; }

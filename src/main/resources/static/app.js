@@ -913,14 +913,20 @@ function emptyState(title, body){
       </div>
 
       <div class="verdict-card fade-up">
-        ${decisionDial({ value: meta.score, color: meta.color, size: 190 })}
+        ${decisionDial({ value: Number.isFinite(analysis.score) ? analysis.score : meta.score, color: meta.color, size: 190 })}
         <div class="verdict-word ${meta.cls}">${meta.word}</div>
-        <p class="verdict-support">${narrative.supportText}</p>
+      </div>
+
+      <div class="card mt-24 fade-up ai-response-card">
+        <div class="ai-response-head">
+          <span class="badge-ai">🤖 AI take</span>
+        </div>
+        <p class="ai-response-text">${(analysis.aiExplanation && analysis.aiExplanation.trim()) ? analysis.aiExplanation : narrative.supportText}</p>
       </div>
 
       <div class="card mt-24 fade-up">
         <h2 class="section-title">Why we recommend ${meta.word === 'BUY' ? 'buying' : meta.word === 'WAIT' ? 'waiting' : meta.word === 'SKIP' ? 'skipping' : 'an alternative'}</h2>
-        <p class="section-sub">SpendWise weighed your cash flow, buffer, and goal timeline.</p>
+        <p class="section-sub">Backend-calculated signals behind this verdict — cash flow, savings buffer, and goal timeline.</p>
         <div>
           ${narrative.reasons.map(r => `
             <div class="reason-row">
