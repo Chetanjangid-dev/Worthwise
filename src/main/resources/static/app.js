@@ -1,5 +1,5 @@
 /**
- * SpendWise — API Service Layer
+ * WorthWise — API Service Layer
  * ---------------------------------------------------
  * Every function below simulates a future REST endpoint served by a
  * Spring Boot backend (PostgreSQL persistence + a decision engine).
@@ -10,7 +10,7 @@
  * Mapping to future endpoints is noted above each function.
  */
 
-const SpendWiseAPI = (() => {
+const WorthWiseAPI = (() => {
 
   // ---- Entity: User -------------------------------------------------
   const user = {
@@ -64,10 +64,17 @@ const SpendWiseAPI = (() => {
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   const API_BASE = '/api';
-  let authToken = localStorage.getItem('spendwise_token') || '';
+  // One-time migration: earlier builds stored the session under the old
+  // "SpendWise" key name. Carry it over so existing logged-in users
+  // aren't signed out by this rename.
+  if (!localStorage.getItem('worthwise_token') && localStorage.getItem('spendwise_token')) {
+    localStorage.setItem('worthwise_token', localStorage.getItem('spendwise_token'));
+    localStorage.removeItem('spendwise_token');
+  }
+  let authToken = localStorage.getItem('worthwise_token') || '';
 
   function isAuthenticated(){
-    return Boolean(localStorage.getItem('spendwise_token'));
+    return Boolean(localStorage.getItem('worthwise_token'));
   }
 
   async function ensureAuth(){
@@ -84,7 +91,7 @@ const SpendWiseAPI = (() => {
     if (!res.ok) throw new Error((await res.json()).error || 'Authentication failed');
     const data = await res.json();
     authToken = data.token;
-    localStorage.setItem('spendwise_token', authToken);
+    localStorage.setItem('worthwise_token', authToken);
     return data.user;
   }
 
@@ -97,7 +104,7 @@ const SpendWiseAPI = (() => {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options.headers || {}) },
     });
     if (res.status === 401) {
-      localStorage.removeItem('spendwise_token');
+      localStorage.removeItem('worthwise_token');
       authToken = '';
       throw new Error('Unauthorized');
     }
@@ -158,7 +165,7 @@ const SpendWiseAPI = (() => {
     async register(email, password){ return authenticate('/auth/register', email, password); },
     logout(){
       authToken = '';
-      localStorage.removeItem('spendwise_token');
+      localStorage.removeItem('worthwise_token');
       window.location.hash = '#/auth';
     },
 
@@ -322,7 +329,7 @@ const DecisionEngineMock = (() => {
   return { run, simulate };
 })();
 /**
- * SpendWise — shared shell logic used across every app page.
+ * WorthWise — shared shell logic used across every app page.
  */
 
 const Fmt = {
@@ -396,7 +403,7 @@ function logoMarkup(){
       <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
       <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     </svg>
-    <span class="logo-word">SpendWise</span>
+    <span class="logo-word">WorthWise</span>
   </div>`;
 }
 
@@ -429,7 +436,7 @@ function sidebarMarkup(activePath){
         <div class="pemail">${currentUserCache.email || ''}</div>
       </div>
     </a>
-    <button class="btn btn-ghost btn-block btn-sm mt-8" onclick="SpendWiseAPI.logout()">Logout</button>
+    <button class="btn btn-ghost btn-block btn-sm mt-8" onclick="WorthWiseAPI.logout()">Logout</button>
   `;
 }
 
@@ -449,7 +456,7 @@ function mobileTopbarMarkup(){
 }
 
 function initShell(){
-  const path = (SpendWiseRouter.currentRoute || 'dashboard') + '.html';
+  const path = (WorthWiseRouter.currentRoute || 'dashboard') + '.html';
   const sidebar = document.getElementById('sidebar');
   const topbarSlot = document.getElementById('mobile-topbar-slot');
   if (sidebar) sidebar.innerHTML = sidebarMarkup(path);
@@ -495,15 +502,15 @@ function decisionDial({ value, color = 'var(--pine)', size = 180, trackColor = '
 
 document.addEventListener('DOMContentLoaded', initShell);
 async function loadDashboard(){
-  if (!SpendWiseAPI.isAuthenticated()) return;
+  if (!WorthWiseAPI.isAuthenticated()) return;
   if (!document.getElementById('greeting')) return; // not on the dashboard page
   try {
     const [user, profile, goals, decisions, planned] = await Promise.all([
-      SpendWiseAPI.getCurrentUser(),
-      SpendWiseAPI.getFinancialProfile(),
-      SpendWiseAPI.getGoals(),
-      SpendWiseAPI.getDecisions(),
-      SpendWiseAPI.getPlannedPurchases(),
+      WorthWiseAPI.getCurrentUser(),
+      WorthWiseAPI.getFinancialProfile(),
+      WorthWiseAPI.getGoals(),
+      WorthWiseAPI.getDecisions(),
+      WorthWiseAPI.getPlannedPurchases(),
     ]);
 
     currentUserCache = user;
@@ -592,7 +599,7 @@ function renderHealth(user, profile){
   const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
   const label = score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'Set up profile';
   const healthCopy = income <= 0
-    ? 'Add your real income, expenses, savings, and goals. SpendWise will update this score from your saved database profile.'
+    ? 'Add your real income, expenses, savings, and goals. WorthWise will update this score from your saved database profile.'
     : surplus < 0
       ? 'Your monthly expenses are higher than your income, so purchases should wait until cash flow improves.'
       : 'This score is calculated from your saved income, expenses, surplus, and emergency fund progress.';
@@ -745,8 +752,8 @@ function emptyState(title, body){
       url: document.getElementById('p-url').value,
     };
 
-    currentProfile = await SpendWiseAPI.getFinancialProfile();
-    const goals = await SpendWiseAPI.getGoals();
+    currentProfile = await WorthWiseAPI.getFinancialProfile();
+    const goals = await WorthWiseAPI.getGoals();
     // Fall back to a placeholder goal so nothing downstream ever has to
     // null-check `goal` again — this was the source of the crash where
     // buildNarrative tried to read `goal.name` on `undefined`.
@@ -788,7 +795,7 @@ function emptyState(title, body){
     window.scrollTo({ top: 0, behavior: 'smooth' });
     await runLoadingSequence();
 
-    const analysisRaw = await SpendWiseAPI.analyzePurchase(currentPurchase);
+    const analysisRaw = await WorthWiseAPI.analyzePurchase(currentPurchase);
     currentAnalysis = analysisRaw;
 
     // Merge with a canned "reasons/alternatives/actionPlan" narrative so the
@@ -1093,7 +1100,7 @@ function emptyState(title, body){
   let searchTerm = '';
 
   async function init(){
-    allDecisions = await SpendWiseAPI.getDecisions();
+    allDecisions = await WorthWiseAPI.getDecisions();
     render();
 
     document.querySelectorAll('.filter-pill').forEach(pill => {
@@ -1147,7 +1154,7 @@ function emptyState(title, body){
     emptySlot.innerHTML = '';
 
     tbody.innerHTML = list.map(d => `
-      <tr onclick="window.SpendWiseDecisions.open('${d.purchase.id}')">
+      <tr onclick="window.WorthWiseDecisions.open('${d.purchase.id}')">
         <td class="prod-name">${d.purchase.name}</td>
         <td class="num">${Fmt.currency(d.purchase.price)}</td>
         <td><span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span></td>
@@ -1156,7 +1163,7 @@ function emptyState(title, body){
     `).join('');
 
     cardsEl.innerHTML = list.map(d => `
-      <div class="dcard mb-16" onclick="window.SpendWiseDecisions.open('${d.purchase.id}')">
+      <div class="dcard mb-16" onclick="window.WorthWiseDecisions.open('${d.purchase.id}')">
         <div class="dc-top">
           <span class="dc-name">${d.purchase.name}</span>
           <span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span>
@@ -1167,7 +1174,7 @@ function emptyState(title, body){
   }
 
   async function openDetail(id){
-    const d = await SpendWiseAPI.getDecision(id);
+    const d = await WorthWiseAPI.getDecision(id);
     if (!d) return;
     const content = document.getElementById('detail-content');
     content.innerHTML = `
@@ -1198,11 +1205,11 @@ function emptyState(title, body){
     history.replaceState(null, '', window.location.pathname + window.location.search + '#/decisions');
   }
 
-  window.SpendWiseDecisions = { open: openDetail, reinit: init };
+  window.WorthWiseDecisions = { open: openDetail, reinit: init };
   document.addEventListener('DOMContentLoaded', init);
 })();
 /* ------------------------------------------------------------------ *
- * SpendWise — single-file router
+ * WorthWise — single-file router
  * Shows/hides page sections based on the URL hash instead of loading
  * separate .html files. Routes: #/dashboard #/analyze #/decisions
  * #/goals #/profile  (empty hash = landing page)
@@ -1210,7 +1217,7 @@ function emptyState(title, body){
 
 const ROUTES = ['dashboard', 'analyze', 'decisions', 'goals', 'profile'];
 const APP_ROUTES = ['dashboard', 'analyze', 'decisions', 'goals', 'profile'];
-const SpendWiseRouter = { currentRoute: 'dashboard' };
+const WorthWiseRouter = { currentRoute: 'dashboard' };
 
 function parseHash(){
   let h = window.location.hash || '';
@@ -1232,7 +1239,7 @@ function navigate(){
   }
 
   const target = [...ROUTES, 'auth'].includes(route) ? route : 'dashboard';
-  if (APP_ROUTES.includes(target) && !SpendWiseAPI.isAuthenticated()) {
+  if (APP_ROUTES.includes(target) && !WorthWiseAPI.isAuthenticated()) {
     window.location.hash = '#/auth';
     return;
   }
@@ -1244,18 +1251,35 @@ function navigate(){
     if (el) el.style.display = (r === target) ? '' : 'none';
   });
 
-  SpendWiseRouter.currentRoute = target;
-  if (target !== 'auth') initShell();
+  WorthWiseRouter.currentRoute = target;
+
+  // The sidebar/mobile-topbar are the signed-in shell — they must never be
+  // visible (even stale/leftover markup from a previous session) while the
+  // user is on the auth screen, or it implies they're logged in when they
+  // are not.
+  const sidebarEl = document.getElementById('sidebar');
+  const topbarSlot = document.getElementById('mobile-topbar-slot');
+  const mainEl = document.querySelector('.app-shell .main');
+  if (target === 'auth') {
+    if (sidebarEl) { sidebarEl.innerHTML = ''; sidebarEl.style.display = 'none'; }
+    if (topbarSlot) { topbarSlot.innerHTML = ''; topbarSlot.style.display = 'none'; }
+    if (mainEl) mainEl.style.width = '100%';
+  } else {
+    if (sidebarEl) sidebarEl.style.display = '';
+    if (topbarSlot) topbarSlot.style.display = '';
+    if (mainEl) mainEl.style.width = '';
+    initShell();
+  }
 
   if (target === 'decisions') {
-    if (window.SpendWiseDecisions) window.SpendWiseDecisions.reinit();
+    if (window.WorthWiseDecisions) window.WorthWiseDecisions.reinit();
     const params = new URLSearchParams(query);
     const id = params.get('id');
-    if (id && window.SpendWiseDecisions) window.SpendWiseDecisions.open(id);
+    if (id && window.WorthWiseDecisions) window.WorthWiseDecisions.open(id);
   }
   if (target === 'dashboard') loadDashboard();
-  if (target === 'goals' && window.SpendWiseGoals) window.SpendWiseGoals.reinit();
-  if (target === 'profile' && window.SpendWiseProfile) window.SpendWiseProfile.reinit();
+  if (target === 'goals' && window.WorthWiseGoals) window.WorthWiseGoals.reinit();
+  if (target === 'profile' && window.WorthWiseProfile) window.WorthWiseProfile.reinit();
 
   window.scrollTo(0, 0);
 }
@@ -1379,7 +1403,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     status.textContent = 'Logging in...';
     try {
-      currentUserCache = await SpendWiseAPI.login(document.getElementById('login-email').value, document.getElementById('login-password').value);
+      currentUserCache = await WorthWiseAPI.login(document.getElementById('login-email').value, document.getElementById('login-password').value);
       window.location.hash = '#/dashboard';
       window.location.reload();
     } catch (err) {
@@ -1390,7 +1414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     status.textContent = 'Creating account...';
     try {
-      currentUserCache = await SpendWiseAPI.register(document.getElementById('register-email').value, document.getElementById('register-password').value);
+      currentUserCache = await WorthWiseAPI.register(document.getElementById('register-email').value, document.getElementById('register-password').value);
       window.location.hash = '#/profile';
       window.location.reload();
     } catch (err) {
@@ -1402,8 +1426,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const GOAL_ICONS_MAP = { shield: ICONS.target, laptop: '<rect x="4" y="4" width="16" height="10" rx="1.5"/><path d="M2 18h20l-1.5-3H3.5L2 18Z"/>', plane: '<path d="M12 2 3 14l4-1 2 4 3-6 3 6 2-4 4 1L12 2Z"/>', book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/>' };
 
   async function loadGoalsPage(){
-    if (!SpendWiseAPI.isAuthenticated()) return;
-    const goals = await SpendWiseAPI.getGoals();
+    if (!WorthWiseAPI.isAuthenticated()) return;
+    const goals = await WorthWiseAPI.getGoals();
     const grid = document.getElementById('goals-grid');
     if (!grid) return;
     grid.innerHTML = goals.map(g => {
@@ -1456,7 +1480,7 @@ document.addEventListener('DOMContentLoaded', () => {
       status.textContent = 'Saving...';
       const data = new FormData(form);
       try {
-        await SpendWiseAPI.createGoal({
+        await WorthWiseAPI.createGoal({
           name: data.get('name'),
           targetAmount: Number(data.get('targetAmount')) || 0,
           currentAmount: Number(data.get('currentAmount')) || 0,
@@ -1471,16 +1495,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  window.SpendWiseGoals = { reinit: loadGoalsPage };
+  window.WorthWiseGoals = { reinit: loadGoalsPage };
   document.addEventListener('DOMContentLoaded', loadGoalsPage);
 
   const EXPENSE_LABELS = { housing: 'Housing', food: 'Food', transport: 'Transport', subscriptions: 'Subscriptions', other: 'Other' };
   let profileState = null;
 
   async function loadProfilePage(){
-    if (!SpendWiseAPI.isAuthenticated()) return;
+    if (!WorthWiseAPI.isAuthenticated()) return;
     if (!document.getElementById('in-income')) return;
-    profileState = await SpendWiseAPI.getFinancialProfile();
+    profileState = await WorthWiseAPI.getFinancialProfile();
     document.getElementById('in-income').value = profileState.monthlyIncome;
     document.getElementById('in-savings').value = profileState.currentSavings;
 
@@ -1502,7 +1526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setActivePill('pref-priority', profileState.preferences.savingPriority);
     setActivePill('pref-purchase', profileState.preferences.purchasePreference);
   }
-  window.SpendWiseProfile = { reinit: loadProfilePage };
+  window.WorthWiseProfile = { reinit: loadProfilePage };
   document.addEventListener('DOMContentLoaded', loadProfilePage);
 
   function setActivePill(groupId, val){
@@ -1533,7 +1557,7 @@ document.addEventListener('DOMContentLoaded', () => {
       purchasePreference: activeValue('pref-purchase'),
     };
     try {
-      const savedProfile = await SpendWiseAPI.updateFinancialProfile(patch);
+      const savedProfile = await WorthWiseAPI.updateFinancialProfile(patch);
       renderSnapshot(savedProfile);
       renderHealth(currentUserCache, savedProfile);
       document.getElementById('save-status').textContent = 'Saved just now';
