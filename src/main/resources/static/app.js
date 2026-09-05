@@ -63,7 +63,7 @@ const SpendWiseAPI = (() => {
   // ---------------------------------------------------------------
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-  const API_BASE = window.location.origin.includes('localhost:5000') ? '/api' : 'http://localhost:5000/api';
+  const API_BASE = '/api';
   let authToken = localStorage.getItem('spendwise_token') || '';
 
   function isAuthenticated(){
