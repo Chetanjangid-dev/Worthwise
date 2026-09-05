@@ -8,11 +8,10 @@
 </head>
 <body>
 
-<!-- ===================== LANDING PAGE ===================== -->
-<div id="view-landing">
-<div class="landing-nav">
-  <div class="logo">
-    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+<!-- ===================== LANDING PAGE (simple welcome) ===================== -->
+<div id="view-landing" class="landing-simple">
+  <div class="logo landing-simple-logo">
+    <svg width="30" height="30" viewBox="0 0 26 26" fill="none">
       <rect x="1" y="6" width="24" height="17" rx="4" fill="#0F6B4F"/>
       <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0B4E3A"/>
       <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
@@ -20,84 +19,14 @@
     </svg>
     <span class="logo-word">SpendWise</span>
   </div>
-  <div class="links">
-    <a href="javascript:void(0)" data-scroll-target="how">How it works</a>
-    <a href="javascript:void(0)" data-scroll-target="value">Why SpendWise</a>
-    <a href="#/auth">Sign in</a>
-  </div>
-  <a href="#/auth" class="btn btn-primary btn-sm">Open App</a>
-</div>
 
-<section class="hero fade-up">
-  <div class="eyebrow">Personal Purchase Decision Engine</div>
-  <h1>Think before <em>you spend.</em></h1>
-  <p class="lead">Make purchases that fit your life — not just your budget. SpendWise weighs every purchase against your income, goals, and future plans before you buy.</p>
-  <div class="hero-ctas">
-    <a href="#/auth" class="btn btn-primary">Open your workspace</a>
-    <a href="#/analyze" class="btn btn-secondary">Analyze a purchase</a>
-  </div>
-</section>
+  <div class="eyebrow" style="justify-content:center; display:flex;">Personal Purchase Decision Engine</div>
+  <h1 class="landing-simple-title">Think before <em>you spend.</em></h1>
+  <p class="landing-simple-sub">Make purchases that fit your life — not just your budget. SpendWise weighs every purchase against your income, goals, and future plans before you buy.</p>
 
-<div class="hero-visual fade-up">
-  <div class="hero-frame">
-    <div class="bar"><span class="dot-b"></span><span class="dot-b"></span><span class="dot-b"></span></div>
-    <div class="decision-preview">
-      <div class="dial-wrap">
-        <div id="landing-dial"></div>
-        <div class="verdict">WAIT</div>
-      </div>
-      <div class="meta">
-        <span class="badge-ai badge-ai">AI Explanation</span>
-        <h3 class="mt-8">Your purchase · Your numbers</h3>
-        <p class="muted" style="font-size:14.5px;">Create your profile, add goals, and SpendWise will calculate the real financial impact before suggesting a decision.</p>
-      </div>
-    </div>
-  </div>
-</div>
+  <a href="#/auth" class="btn btn-primary btn-lg landing-simple-cta">Get Started</a>
 
-<section class="value-strip" id="value">
-  <div class="item">
-    <div class="n">Affordability</div>
-    <h3>Beyond your bank balance</h3>
-    <p>SpendWise checks cash flow, savings buffer, and existing commitments — not just whether the money is sitting in your account today.</p>
-  </div>
-  <div class="item">
-    <div class="n">Goal impact</div>
-    <h3>See what a purchase delays</h3>
-    <p>Every recommendation shows exactly how a purchase shifts your goal timelines — in months, not vague warnings.</p>
-  </div>
-  <div class="item">
-    <div class="n">Timing</div>
-    <h3>Buy now, wait, or skip</h3>
-    <p>A clear, explainable verdict — with a simulator to see how waiting, saving more, or a discount changes the outcome.</p>
-  </div>
-</section>
-
-<section class="flow" id="how">
-  <h2>A financial decision workspace</h2>
-  <p class="sub">Not a chatbot. Not a spreadsheet. A structured way to reason through a purchase.</p>
-  <div class="flow-steps">
-    <div class="step"><span class="pill">Can I afford it?</span></div>
-    <span class="arrow">→</span>
-    <div class="step"><span class="pill">What will it change?</span></div>
-    <span class="arrow">→</span>
-    <div class="step"><span class="pill">Impact on my goals?</span></div>
-    <span class="arrow">→</span>
-    <div class="step"><span class="pill">What if I wait?</span></div>
-    <span class="arrow">→</span>
-    <div class="step"><span class="pill">What should I do?</span></div>
-  </div>
-</section>
-
-<section class="cta-band">
-  <div class="cta-inner">
-    <h2>Your next purchase deserves five minutes of thought.</h2>
-    <p>Set up your financial profile once — SpendWise handles the analysis every time after.</p>
-    <a href="#/auth" class="btn btn-primary">Open your workspace</a>
-  </div>
-</section>
-
-<footer class="landing-footer">SpendWise · A personal purchase decision engine · Prototype build</footer>
+  <footer class="landing-footer">SpendWise · A personal purchase decision engine</footer>
 </div>
 
 <!-- ===================== APP SHELL ===================== -->
@@ -110,13 +39,13 @@
 
     <main class="main">
 
-      <div class="page" id="view-auth" style="display:none;">
+      <div class="page auth-page" id="view-auth" style="display:none;">
 <div class="page-header">
         <div class="eyebrow">Account</div>
         <h1 class="page-title">Sign in to your SpendWise workspace</h1>
         <p class="page-sub">Your profile, goals, and decisions are stored in PostgreSQL under your account.</p>
       </div>
-      <div class="grid cols-2" style="grid-template-columns:1fr 1fr;">
+      <div class="grid cols-2 auth-grid">
         <div class="card">
           <h2 class="section-title">Login</h2>
           <p class="section-sub">Use an existing account.</p>
