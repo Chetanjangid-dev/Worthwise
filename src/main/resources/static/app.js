@@ -913,8 +913,8 @@ function emptyState(title, body){
         <h2 class="section-title">Why we recommend ${meta.word === 'BUY' ? 'buying' : meta.word === 'WAIT' ? 'waiting' : meta.word === 'SKIP' ? 'skipping' : 'an alternative'}</h2>
         <p class="section-sub">Backend-calculated signals behind this verdict — cash flow, savings buffer, and goal timeline.</p>
         <div>
-          ${narrative.reasons.map(r => `
-            <div class="reason-row">
+          ${narrative.reasons.map((r, ri) => `
+            <div class="reason-row" style="--ri:${ri}">
               <span class="reason-icon ${r.type}">
                 ${r.type === 'positive'
                   ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>'
@@ -1028,6 +1028,8 @@ function emptyState(title, body){
 
     const aiText = (analysis.aiExplanation && analysis.aiExplanation.trim()) ? analysis.aiExplanation : narrative.supportText;
     typewriteInto(document.getElementById('ai-response-text'), aiText, 14);
+
+    if (analysis.decision === 'BUY') fireConfetti();
 
     renderTimeline(purchase, profile, analysis);
     initSimulator(purchase, profile, goal);
@@ -1346,6 +1348,27 @@ function typewriteInto(el, text, speed){
       cursor.remove();
     }
   })();
+}
+
+// ---------------------------------------------------------------
+// Tiny confetti burst — celebrates a "BUY" verdict
+// ---------------------------------------------------------------
+function fireConfetti(){
+  const colors = ['#22C08A', '#6366F1', '#EC4899', '#F5B14C'];
+  const count = 26;
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const size = 6 + Math.random() * 6;
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.width = size + 'px';
+    piece.style.height = (size * 0.4) + 'px';
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.3) + 's';
+    document.body.appendChild(piece);
+    piece.addEventListener('animationend', () => piece.remove());
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
