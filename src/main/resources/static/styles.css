@@ -82,6 +82,51 @@ h1,h2,h3,h4{ font-family: var(--font-display); font-weight: 600; margin: 0; lett
 .logo-word{ font-family: var(--font-display); font-weight:600; font-size:19px; letter-spacing:-0.01em; }
 
 /* ---------------------------------------------------------------- */
+/* Simple landing / welcome screen                                   */
+/* ---------------------------------------------------------------- */
+.landing-simple{
+  min-height: 100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center;
+  padding: 32px 20px;
+}
+.landing-simple-logo{ justify-content:center; margin-bottom: 18px; }
+.landing-simple-title{
+  font-size: 44px; line-height:1.1; max-width: 640px; margin: 0 0 16px;
+}
+.landing-simple-title em{ font-style: italic; color: var(--pine); }
+.landing-simple-sub{
+  color: var(--ink-muted); font-size: 16px; max-width: 520px; margin: 0 0 30px;
+}
+.landing-simple-cta{ padding: 14px 30px; font-size: 15.5px; }
+.landing-simple .landing-footer{ position:absolute; bottom: 18px; left:0; right:0; }
+@media (max-width: 560px){
+  .landing-simple-title{ font-size: 32px; }
+}
+
+/* ---------------------------------------------------------------- */
+/* Auth page — fit login + register in a single screen               */
+/* ---------------------------------------------------------------- */
+#view-auth.auth-page{
+  min-height: 100vh;
+  display:flex; flex-direction:column; justify-content:center;
+  padding-top: 24px; padding-bottom: 24px;
+}
+#view-auth.auth-page .page-header{ text-align:center; margin-bottom: 22px; }
+#view-auth.auth-page .auth-grid{
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px;
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+}
+#view-auth.auth-page .auth-grid .card{ padding: 22px; }
+#view-auth.auth-page .field{ margin-bottom: 14px; }
+@media (max-width: 560px){
+  #view-auth.auth-page .auth-grid{ grid-template-columns: 1fr !important; max-width: 380px; }
+}
+
+/* ---------------------------------------------------------------- */
 /* App shell / sidebar                                               */
 /* ---------------------------------------------------------------- */
 .app-shell{ display:flex; min-height:100vh; }
