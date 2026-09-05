@@ -181,9 +181,9 @@ h1,h2,h3,h4{ font-family: var(--font-display); font-weight: 600; margin: 0; lett
   transition: transform .15s var(--ease), background .15s var(--ease), box-shadow .15s var(--ease), border-color .15s var(--ease);
   white-space:nowrap;
 }
-.btn:active{ transform: scale(.98); }
+.btn:active{ transform: scale(.96); }
 .btn-primary{ background: var(--pine); color:#fff; box-shadow: var(--shadow-sm); }
-.btn-primary:hover{ background: var(--pine-dark); box-shadow: var(--shadow-md); }
+.btn-primary:hover{ background: var(--pine-dark); box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .btn-secondary{ background: var(--surface); color: var(--ink); border-color: var(--border-strong); }
 .btn-secondary:hover{ background: var(--surface-sunk); }
 .btn-ghost{ background:transparent; color: var(--ink-muted); }
@@ -420,20 +420,49 @@ textarea.input{ resize: vertical; min-height: 84px; }
   text-align:center; padding: 40px 20px 34px;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
   margin-bottom: 22px;
+  animation: verdictPop .6s cubic-bezier(.22,1.4,.36,1) both;
 }
-.verdict-card .verdict-word{ font-family: var(--font-display); font-size: 52px; font-weight:700; margin: 6px 0 14px; letter-spacing:-0.01em; }
+@keyframes verdictPop{
+  0%{ opacity:0; transform: scale(.85) translateY(8px); }
+  60%{ opacity:1; transform: scale(1.03) translateY(0); }
+  100%{ transform: scale(1); }
+}
+.verdict-card .verdict-word{
+  font-family: var(--font-display); font-size: 52px; font-weight:700; margin: 6px 0 14px; letter-spacing:-0.01em;
+  animation: verdictWordIn .5s .15s cubic-bezier(.22,1.4,.36,1) both;
+}
+@keyframes verdictWordIn{ from{ opacity:0; transform: translateY(6px) scale(.9); } to{ opacity:1; transform:none; } }
 .verdict-word.buy{ color: var(--buy); }
 .verdict-word.wait{ color: var(--wait); }
 .verdict-word.skip{ color: var(--skip); }
 .verdict-word.alt{ color: var(--alt); }
 .verdict-support{ max-width: 520px; margin: 0 auto; color: var(--ink-muted); font-size: 15px; line-height:1.6; }
 
-.ai-response-card{ background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(236,72,153,0.05)); border: 1px solid rgba(99,102,241,0.18); }
+/* confetti burst — spawned only for a BUY verdict */
+.confetti-piece{
+  position:fixed; top:-12px; z-index:999; border-radius:2px; pointer-events:none;
+  animation-name: confettiFall; animation-timing-function: cubic-bezier(.35,0,.65,1); animation-fill-mode: forwards;
+}
+@keyframes confettiFall{
+  0%{ transform: translateY(0) rotate(0deg); opacity:1; }
+  100%{ transform: translateY(100vh) rotate(540deg); opacity:0; }
+}
+
+.ai-response-card{
+  background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(236,72,153,0.05)); border: 1px solid rgba(99,102,241,0.18);
+}
 .ai-response-head{ display:flex; align-items:center; margin-bottom: 10px; }
+.ai-response-head .badge-ai{ animation: badgePulse 2.2s ease-in-out infinite; }
+@keyframes badgePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(99,102,241,.25);} 50%{ box-shadow:0 0 0 6px rgba(99,102,241,0);} }
 .ai-response-text{ font-size: 16px; line-height: 1.7; color: var(--ink); margin: 0; }
 
 /* ---- why this decision ---- */
-.reason-row{ display:flex; gap:12px; padding: 13px 4px; border-bottom: 1px solid var(--border); align-items:flex-start; }
+.reason-row{
+  display:flex; gap:12px; padding: 13px 4px; border-bottom: 1px solid var(--border); align-items:flex-start;
+  opacity:0; animation: reasonSlideIn .45s var(--ease) both;
+  animation-delay: calc(var(--ri, 0) * 90ms);
+}
+@keyframes reasonSlideIn{ from{ opacity:0; transform: translateX(-10px);} to{ opacity:1; transform:none; } }
 .reason-row:last-child{ border-bottom:none; }
 .reason-icon{ width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:1px; }
 .reason-icon.positive{ background: var(--buy-soft); color: var(--buy); }
