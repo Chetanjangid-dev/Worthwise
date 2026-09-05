@@ -1462,5 +1462,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('landing-dial').innerHTML = decisionDial({ value: 62, color: 'var(--wait)', size: 150 });
+  const landingDialEl = document.getElementById('landing-dial');
+  if (landingDialEl) landingDialEl.innerHTML = decisionDial({ value: 62, color: 'var(--wait)', size: 150 });
 // goals inline + profile inline + landing inline appended above
