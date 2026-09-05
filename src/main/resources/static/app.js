@@ -150,7 +150,7 @@ const SpendWiseAPI = (() => {
   return {
     // GET /api/users/me
     async getCurrentUser() {
-      if (!isAuthenticated()) { await delay(80); return { ...user }; }
+      if (!isAuthenticated()) throw new Error('Login required');
       return await api('/auth/me');
     },
     isAuthenticated,
@@ -164,62 +164,50 @@ const SpendWiseAPI = (() => {
 
     // GET /api/profile
     async getFinancialProfile() {
-      if (!isAuthenticated()) { await delay(80); return JSON.parse(JSON.stringify(financialProfile)); }
+      if (!isAuthenticated()) throw new Error('Login required');
       return adaptProfile(await api('/profile'));
     },
 
     // PUT /api/profile
     async updateFinancialProfile(patch) {
-      if (!isAuthenticated()) {
-        await delay(150);
-        Object.assign(financialProfile, patch);
-        return JSON.parse(JSON.stringify(financialProfile));
-      }
+      if (!isAuthenticated()) throw new Error('Login required');
       return adaptProfile(await api('/profile', { method: 'PUT', body: JSON.stringify(patch) }));
     },
 
     // GET /api/goals
     async getGoals() {
-      if (!isAuthenticated()) { await delay(80); return JSON.parse(JSON.stringify(goals)); }
+      if (!isAuthenticated()) throw new Error('Login required');
       return await api('/goals');
     },
 
     // GET /api/goals/{id}
     async getGoal(id) {
-      if (!isAuthenticated()) {
-        await delay(60);
-        return JSON.parse(JSON.stringify(goals.find((g) => g.id === id)));
-      }
+      if (!isAuthenticated()) throw new Error('Login required');
       const all = await api('/goals');
       return all.find((g) => g.id === id) || null;
     },
 
     // POST /api/goals
     async createGoal(goal) {
-      if (!isAuthenticated()) {
-        await delay(150);
-        const newGoal = { id: "g_" + Date.now(), status: "ACTIVE", currentAmount: 0, ...goal };
-        goals.push(newGoal);
-        return newGoal;
-      }
+      if (!isAuthenticated()) throw new Error('Login required');
       return await api('/goals', { method: 'POST', body: JSON.stringify(goal) });
     },
 
     // GET /api/purchases/history
     async getDecisions() {
-      if (!isAuthenticated()) { await delay(100); return []; }
+      if (!isAuthenticated()) throw new Error('Login required');
       return (await api('/purchases/history')).map(adaptDecisionItem);
     },
 
     // GET /api/purchases/{id}
     async getDecision(id) {
-      if (!isAuthenticated()) { await delay(80); return null; }
+      if (!isAuthenticated()) throw new Error('Login required');
       return adaptDecisionItem(await api(`/purchases/${id}`));
     },
 
     // GET /api/purchases/planned (derived client-side from history)
     async getPlannedPurchases() {
-      if (!isAuthenticated()) { await delay(80); return []; }
+      if (!isAuthenticated()) throw new Error('Login required');
       const history = (await api('/purchases/history')).map(adaptDecisionItem);
       return history
         .filter(d => d.analysis.decision === 'WAIT' || d.analysis.decision === 'CONSIDER_ALTERNATIVE')
@@ -246,10 +234,7 @@ const SpendWiseAPI = (() => {
         reason: purchaseInput.reason,
         productUrl: purchaseInput.productUrl,
       };
-      if (!isAuthenticated()) {
-        await delay(1600); // simulated engine latency for the loading sequence
-        return DecisionEngineMock.run(purchaseInput, financialProfile, goals);
-      }
+      if (!isAuthenticated()) throw new Error('Login required');
       return adaptAnalysis(await api('/purchases/evaluate', { method: 'POST', body: JSON.stringify(payload) }));
     },
   };
