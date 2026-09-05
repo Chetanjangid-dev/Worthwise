@@ -9,25 +9,46 @@
 </head>
 <body>
 
-<!-- ===================== LANDING PAGE (simple welcome) ===================== -->
-<div id="view-landing" class="landing-simple">
-  <div class="logo landing-simple-logo">
-    <svg width="30" height="30" viewBox="0 0 26 26" fill="none">
-      <rect x="1" y="6" width="24" height="17" rx="4" fill="#0F6B4F"/>
-      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0B4E3A"/>
-      <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
-      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    </svg>
-    <span class="logo-word">SpendWise</span>
-  </div>
+<!-- ===================== LANDING PAGE ===================== -->
+<div id="view-landing" class="landing-page">
+  <nav class="landing-topbar">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <rect x="1" y="6" width="24" height="17" rx="4" fill="#0F6B4F"/>
+        <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0B4E3A"/>
+        <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
+        <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <span class="logo-word">SpendWise</span>
+    </div>
+  </nav>
 
-  <div class="eyebrow" style="justify-content:center; display:flex;">Personal Purchase Decision Engine</div>
-  <h1 class="landing-simple-title">Think before <em>you spend.</em></h1>
-  <p class="landing-simple-sub">Make purchases that fit your life — not just your budget. SpendWise weighs every purchase against your income, goals, and future plans before you buy.</p>
+  <section class="landing-hero">
+    <div class="landing-hero-text">
+      <p class="eyebrow">Personal Purchase Decision Engine</p>
+      <h1 class="landing-title">Think before you spend.</h1>
+      <p class="landing-desc">Make purchases that fit your life, not just your budget. SpendWise weighs every purchase against your income, goals, and future plans before you buy.</p>
+      <a href="#/auth" class="btn btn-primary landing-cta">Get started</a>
+    </div>
 
-  <a href="#/auth" class="btn btn-primary btn-lg landing-simple-cta">Get Started</a>
+    <div class="landing-hero-visual">
+      <div class="hero-frame">
+        <div class="hero-frame-bar"><span></span><span></span><span></span></div>
+        <div class="decision-preview">
+          <div class="dial-wrap">
+            <div id="landing-dial"></div>
+            <div class="verdict">Wait</div>
+          </div>
+          <div class="meta">
+            <h3>Wireless headphones · ₹4,999</h3>
+            <p class="muted" style="font-size:14.5px;">Buying now pushes your Goa trip fund back by 3 weeks. A 20% sale in two weeks closes that gap completely.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-  <footer class="landing-footer">SpendWise · A personal purchase decision engine</footer>
+  <footer class="landing-footer">A personal purchase decision engine for everyday spending decisions.</footer>
 </div>
 
 <!-- ===================== APP SHELL ===================== -->
@@ -43,30 +64,31 @@
       <div class="page auth-page" id="view-auth" style="display:none;">
 <div class="page-header">
         <div class="eyebrow">Account</div>
-        <h1 class="page-title">Sign in to your SpendWise workspace</h1>
+        <h1 class="page-title">Sign in to your workspace</h1>
         <p class="page-sub">Your profile, goals, and decisions are stored in PostgreSQL under your account.</p>
       </div>
-      <div class="grid cols-2 auth-grid">
-        <div class="card">
+      <div class="card auth-split-card">
+        <div class="auth-half">
           <h2 class="section-title">Login</h2>
           <p class="section-sub">Use an existing account.</p>
           <form id="login-form">
             <div class="field"><label>Email</label><input class="input" id="login-email" type="email" required></div>
             <div class="field"><label>Password</label><input class="input" id="login-password" type="password" required></div>
-            <button class="btn btn-primary" type="submit">Login</button>
+            <button class="btn btn-primary btn-block" type="submit">Login</button>
           </form>
         </div>
-        <div class="card">
-          <h2 class="section-title">Create Account</h2>
+        <div class="auth-divider"><span>or</span></div>
+        <div class="auth-half">
+          <h2 class="section-title">Create account</h2>
           <p class="section-sub">Start with an empty profile and add your real numbers.</p>
           <form id="register-form">
             <div class="field"><label>Email</label><input class="input" id="register-email" type="email" required></div>
             <div class="field"><label>Password</label><input class="input" id="register-password" type="password" minlength="8" required></div>
-            <button class="btn btn-secondary" type="submit">Create account</button>
+            <button class="btn btn-secondary btn-block" type="submit">Create account</button>
           </form>
         </div>
       </div>
-      <p class="muted mt-16" id="auth-status"></p>
+      <p class="muted mt-16" id="auth-status" style="text-align:center;"></p>
       </div>
 
       <div class="page" id="view-dashboard">
