@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SpendWise — Design System
+   Worthwise — Design System
    Palette: pine green (trust/growth) + warm paper background + indigo accent
    Type: Fraunces (display) / Inter (UI) / IBM Plex Mono (numbers, data)
    ========================================================================== */
@@ -800,3 +800,117 @@ input[type="range"]::-moz-range-thumb{
 .auth-panel[hidden]{ display:none; }
 .auth-card h2.section-title{ text-align:center; }
 .auth-card .section-sub{ text-align:center; }
+
+/* ==========================================================================
+   Eye-catching wallet/money animation block (added below the landing gauge)
+   ========================================================================== */
+.wallet-anim-module{
+  position: relative;
+  width: 100%;
+  height: 220px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+}
+
+.wallet-anim-module .wallet-container{
+  position: absolute;
+  bottom: 24px;
+  left: 60px;
+  width: 140px;
+  height: 90px;
+}
+.wallet-anim-module .wallet-back{
+  position: absolute; bottom: 0; width: 100%; height: 90px;
+  background-color: #5C3A21; border-radius: 12px;
+  box-shadow: inset 0 5px 10px rgba(0,0,0,0.3); z-index: 1;
+}
+.wallet-anim-module .wallet-front{
+  position: absolute; bottom: 0; width: 100%; height: 65px;
+  background-color: #8B5A33; border-radius: 12px;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.2); z-index: 3;
+  border: 2px dashed #a67c52; box-sizing: border-box;
+}
+.wallet-anim-module .money-note{
+  position: absolute; bottom: 10px; left: 20px; width: 100px; height: 50px;
+  background: linear-gradient(135deg, #2ecc71, #1e824c);
+  border-radius: 4px; z-index: 2; border: 2px solid #a2f2c2;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 8px; box-sizing: border-box;
+  animation: walletNoteStory 12s infinite ease-in-out;
+}
+.wallet-anim-module .money-note::before{
+  content:''; width: 12px; height: 100%; background-color: rgba(255,255,255,0.45);
+}
+.wallet-anim-module .note-text{
+  color:#ffffff; font-weight:900; font-size:15px; letter-spacing:1px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.wallet-anim-module .human-arm{
+  position: absolute; top: -60px; right: 40px; width: 70px; height: 220px; z-index: 4;
+  animation: walletArmStory 12s infinite ease-in-out;
+}
+.wallet-anim-module .sleeve{
+  width: 48px; height: 130px; background-color: #34495e; border-radius: 6px; margin: 0 auto;
+}
+.wallet-anim-module .cuff{
+  width: 52px; height: 10px; background-color: #ecf0f1; border-radius: 2px; margin: 0 auto;
+}
+.wallet-anim-module .hand-svg{
+  width: 65px; height: 70px; display:block; margin: 0 auto; transform: scaleX(-1);
+}
+.wallet-anim-module .alert-popup{
+  position: absolute; top: 28%; left: 50%; transform: translate(-50%, -50%) scale(0);
+  color:#fff; padding: 14px 18px; border-radius: 14px; text-align:center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4); z-index: 10; width: 75%; opacity: 0;
+}
+.wallet-anim-module .popup-stop{
+  background: linear-gradient(135deg, #ff416c, #ff4b2b);
+  animation: walletPopupStopStory 12s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.wallet-anim-module .popup-allow{
+  background: linear-gradient(135deg, #11998e, #38ef7d);
+  animation: walletPopupAllowStory 12s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.wallet-anim-module .alert-popup h2{ margin:0 0 4px 0; font-size:19px; text-transform:uppercase; }
+.wallet-anim-module .alert-popup p{ margin:0; font-size:13px; font-weight:bold; line-height:1.3; }
+
+@keyframes walletArmStory{
+  0% { transform: translate(160px, -160px) rotate(35deg); }
+  9% { transform: translate(-175px, 155px) rotate(35deg); }
+  16% { transform: translate(-140px, 95px) rotate(35deg); }
+  28% { transform: translate(-140px, 95px) rotate(35deg); }
+  35% { transform: translate(-175px, 155px) rotate(35deg); }
+  42% { transform: translate(160px, -160px) rotate(35deg); }
+  50% { transform: translate(160px, -160px) rotate(35deg); }
+  59% { transform: translate(-175px, 155px) rotate(35deg); }
+  66% { transform: translate(-140px, 95px) rotate(35deg); }
+  78% { transform: translate(-140px, 95px) rotate(35deg); }
+  88% { transform: translate(220px, -220px) rotate(35deg); }
+  100% { transform: translate(160px, -160px) rotate(35deg); }
+}
+@keyframes walletNoteStory{
+  0%, 9% { transform: translate(0, 0); opacity: 1; }
+  16%, 28% { transform: translate(25px, -45px); opacity: 1; }
+  35%, 59% { transform: translate(0, 0); opacity: 1; }
+  66%, 78% { transform: translate(25px, -45px); opacity: 1; }
+  88% { transform: translate(280px, -260px); opacity: 1; }
+  89% { opacity: 0; transform: translate(0,0); }
+  100% { opacity: 1; transform: translate(0,0); }
+}
+@keyframes walletPopupStopStory{
+  0%, 16% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  19%, 28% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  32%, 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+}
+@keyframes walletPopupAllowStory{
+  0%, 66% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  69%, 78% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  82%, 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+}
+
+@media (max-width: 560px){
+  .wallet-anim-module{ height: 190px; }
+  .wallet-anim-module .wallet-container{ left: 20px; }
+}
