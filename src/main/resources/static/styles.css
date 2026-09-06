@@ -610,8 +610,8 @@ input[type="range"]::-moz-range-thumb{
     display:flex; flex-direction:column;
   }
   .hero-frame .bar{ order:0; }
-  .hero-frame .decision-preview{ order:1; }
-  .hero-frame .wallet-anim-module{ order:2; }
+  .hero-frame .wallet-anim-module{ order:1; }
+  .hero-frame .decision-preview{ order:2; }
 
   .hero-frame .bar{ display:flex; gap:6px; padding: 14px 18px; border-bottom:1px solid var(--border); }
   .hero-frame .dot-b{ width:9px;height:9px;border-radius:50%; background: var(--border-strong); }
@@ -822,7 +822,7 @@ input[type="range"]::-moz-range-thumb{
   height: 220px;
   margin: 0 auto;
   overflow: hidden;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .wallet-anim-module .wallet-container{
