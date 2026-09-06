@@ -448,7 +448,19 @@ function sidebarMarkup(activePath){
   `;
 }
 
-function mobileTopbarMarkup(){
+/**
+ * FIX (issue 3): this used to render the full topbar — including the
+ * hamburger drawer-toggle — unconditionally, on every page including the
+ * logged-out auth screen. The backend already refuses those routes, but
+ * the UI still showed the button and, once tapped, the full app nav
+ * inside the drawer. Now it takes the auth state explicitly: logged-out
+ * users get just the logo (no toggle button, nothing to open), logged-in
+ * users get the normal topbar with the drawer + quick-analyze shortcut.
+ */
+function mobileTopbarMarkup(authed){
+  if (!authed) {
+    return `<div class="mobile-topbar">${logoMarkup()}</div>`;
+  }
   return `
     <div class="mobile-topbar">
       <button class="drawer-toggle" aria-label="Open menu">
@@ -463,14 +475,34 @@ function mobileTopbarMarkup(){
   `;
 }
 
+/**
+ * FIX (issue 3, continued): initShell() now checks SpendWiseAPI.isAuthenticated()
+ * before rendering anything into the sidebar. When logged out, the sidebar
+ * element is emptied AND hidden (display:none) and the mobile topbar renders
+ * without a drawer toggle — so there is nothing to click and nothing to see,
+ * on desktop or mobile, until the user actually logs in. This does not touch
+ * any backend/auth call — isAuthenticated() itself is unchanged.
+ */
 function initShell(){
   const path = (SpendWiseRouter.currentRoute || 'dashboard') + '.html';
   const sidebar = document.getElementById('sidebar');
   const topbarSlot = document.getElementById('mobile-topbar-slot');
-  if (sidebar) sidebar.innerHTML = sidebarMarkup(path);
-  if (topbarSlot) topbarSlot.innerHTML = mobileTopbarMarkup();
+  const authed = SpendWiseAPI.isAuthenticated();
 
-  // Mobile drawer behaviour
+  if (topbarSlot) topbarSlot.innerHTML = mobileTopbarMarkup(authed);
+
+  if (!authed) {
+    if (sidebar) { sidebar.innerHTML = ''; sidebar.style.display = 'none'; }
+    return;
+  }
+
+  if (sidebar) {
+    sidebar.style.display = '';
+    sidebar.innerHTML = sidebarMarkup(path);
+  }
+
+  // Mobile drawer behaviour (only relevant when the toggle button exists,
+  // i.e. only for logged-in users — see mobileTopbarMarkup above).
   const toggle = document.querySelector('.drawer-toggle');
   const overlay = document.querySelector('.drawer-overlay');
   function openDrawer(){
@@ -1280,7 +1312,13 @@ function navigate(){
   });
 
   SpendWiseRouter.currentRoute = target;
-  if (target !== 'auth') initShell();
+  // FIX (issue 3): initShell() now self-guards on auth state (see shell.js),
+  // so it's safe — and necessary — to call it on every route, including
+  // '#/auth'. Previously this call was skipped for the auth route, which
+  // meant a stale, fully-populated sidebar (rendered by the unconditional
+  // DOMContentLoaded -> initShell() call) could be left sitting in the DOM
+  // behind the login screen.
+  initShell();
 
   if (target === 'decisions') {
     if (window.SpendWiseDecisions) window.SpendWiseDecisions.reinit();
@@ -1317,6 +1355,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
   const status = document.getElementById('auth-status');
+
+  /**
+   * FIX (issue 2): the tab bar, the sliding highlight, and the inline
+   * "Create an account" / "Login" links already existed in the HTML with
+   * data-auth-tab attributes and matching CSS (.auth-tab-slider.to-register,
+   * the [hidden] panels) — but nothing ever listened for a click on them,
+   * so "Create account" was inert. This wires all four elements
+   * (#tab-login, #tab-register, and the two inline links) to one shared
+   * handler that swaps the active tab, slides the highlight, and shows the
+   * matching panel. Pure UI state — no backend/auth calls are involved.
+   */
+  const tabLogin = document.getElementById('tab-login');
+  const tabRegister = document.getElementById('tab-register');
+  const slider = document.getElementById('auth-tab-slider');
+  const panelLogin = document.getElementById('panel-login');
+  const panelRegister = document.getElementById('panel-register');
+
+  function switchAuthTab(tab){
+    const toRegister = tab === 'register';
+    if (tabLogin) tabLogin.classList.toggle('active', !toRegister);
+    if (tabRegister) tabRegister.classList.toggle('active', toRegister);
+    if (slider) slider.classList.toggle('to-register', toRegister);
+    if (panelLogin) panelLogin.hidden = toRegister;
+    if (panelRegister) panelRegister.hidden = !toRegister;
+    if (status) status.textContent = '';
+  }
+
+  document.querySelectorAll('[data-auth-tab]').forEach(el => {
+    el.addEventListener('click', () => switchAuthTab(el.dataset.authTab));
+  });
+
   loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     status.textContent = 'Logging in...';
