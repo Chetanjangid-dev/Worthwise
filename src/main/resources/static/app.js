@@ -541,6 +541,19 @@ function decisionDial({ value, color = 'var(--pine)', size = 180, trackColor = '
 }
 
 document.addEventListener('DOMContentLoaded', initShell);
+
+// Cursor-reactive spotlight on the landing hero card (see .hero-frame::after
+// in styles.css). Plain CSS custom properties, no per-frame layout work.
+document.addEventListener('DOMContentLoaded', () => {
+  const heroFrame = document.querySelector('.hero-frame');
+  if (!heroFrame) return;
+  heroFrame.addEventListener('mousemove', (e) => {
+    const rect = heroFrame.getBoundingClientRect();
+    heroFrame.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
+    heroFrame.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
+  });
+});
+
 async function loadDashboard(){
   if (!SpendWiseAPI.isAuthenticated()) return;
   if (!document.getElementById('greeting')) return; // not on the dashboard page
@@ -1557,5 +1570,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const landingDialEl = document.getElementById('landing-dial');
-  if (landingDialEl) landingDialEl.innerHTML = decisionDial({ value: 62, color: 'var(--wait)', size: 150 });
+  if (landingDialEl) {
+    // Render at 0 first, then flip to the real value on the next frame —
+    // this is what makes the stroke-dashoffset transition actually sweep
+    // in, instead of rendering already-complete with no motion.
+    landingDialEl.innerHTML = decisionDial({ value: 0, color: 'var(--wait)', size: 150 });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        landingDialEl.innerHTML = decisionDial({ value: 62, color: 'var(--wait)', size: 150 });
+        const verdictEl = document.querySelector('.decision-preview .verdict');
+        const dialWrapEl = document.querySelector('.decision-preview .dial-wrap');
+        if (verdictEl) verdictEl.classList.add('verdict-reveal');
+        if (dialWrapEl) dialWrapEl.classList.add('dial-glow-bloom');
+      });
+    });
+  }
 // goals inline + profile inline + landing inline appended above
