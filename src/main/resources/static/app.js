@@ -1,5 +1,5 @@
 /**
- * WorthWise — API Service Layer
+ * SpendWise — API Service Layer
  * ---------------------------------------------------
  * Every function below simulates a future REST endpoint served by a
  * Spring Boot backend (PostgreSQL persistence + a decision engine).
@@ -10,7 +10,7 @@
  * Mapping to future endpoints is noted above each function.
  */
 
-const WorthWiseAPI = (() => {
+const SpendWiseAPI = (() => {
 
   // ---- Entity: User -------------------------------------------------
   const user = {
@@ -64,17 +64,10 @@ const WorthWiseAPI = (() => {
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   const API_BASE = '/api';
-  // One-time migration: earlier builds stored the session under the old
-  // "SpendWise" key name. Carry it over so existing logged-in users
-  // aren't signed out by this rename.
-  if (!localStorage.getItem('worthwise_token') && localStorage.getItem('spendwise_token')) {
-    localStorage.setItem('worthwise_token', localStorage.getItem('spendwise_token'));
-    localStorage.removeItem('spendwise_token');
-  }
-  let authToken = localStorage.getItem('worthwise_token') || '';
+  let authToken = localStorage.getItem('spendwise_token') || '';
 
   function isAuthenticated(){
-    return Boolean(localStorage.getItem('worthwise_token'));
+    return Boolean(localStorage.getItem('spendwise_token'));
   }
 
   async function ensureAuth(){
@@ -91,7 +84,7 @@ const WorthWiseAPI = (() => {
     if (!res.ok) throw new Error((await res.json()).error || 'Authentication failed');
     const data = await res.json();
     authToken = data.token;
-    localStorage.setItem('worthwise_token', authToken);
+    localStorage.setItem('spendwise_token', authToken);
     return data.user;
   }
 
@@ -104,7 +97,7 @@ const WorthWiseAPI = (() => {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options.headers || {}) },
     });
     if (res.status === 401) {
-      localStorage.removeItem('worthwise_token');
+      localStorage.removeItem('spendwise_token');
       authToken = '';
       throw new Error('Unauthorized');
     }
@@ -157,7 +150,7 @@ const WorthWiseAPI = (() => {
   return {
     // GET /api/users/me
     async getCurrentUser() {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) { await delay(80); return { ...user }; }
       return await api('/auth/me');
     },
     isAuthenticated,
@@ -165,56 +158,68 @@ const WorthWiseAPI = (() => {
     async register(email, password){ return authenticate('/auth/register', email, password); },
     logout(){
       authToken = '';
-      localStorage.removeItem('worthwise_token');
+      localStorage.removeItem('spendwise_token');
       window.location.hash = '#/auth';
     },
 
     // GET /api/profile
     async getFinancialProfile() {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) { await delay(80); return JSON.parse(JSON.stringify(financialProfile)); }
       return adaptProfile(await api('/profile'));
     },
 
     // PUT /api/profile
     async updateFinancialProfile(patch) {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) {
+        await delay(150);
+        Object.assign(financialProfile, patch);
+        return JSON.parse(JSON.stringify(financialProfile));
+      }
       return adaptProfile(await api('/profile', { method: 'PUT', body: JSON.stringify(patch) }));
     },
 
     // GET /api/goals
     async getGoals() {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) { await delay(80); return JSON.parse(JSON.stringify(goals)); }
       return await api('/goals');
     },
 
     // GET /api/goals/{id}
     async getGoal(id) {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) {
+        await delay(60);
+        return JSON.parse(JSON.stringify(goals.find((g) => g.id === id)));
+      }
       const all = await api('/goals');
       return all.find((g) => g.id === id) || null;
     },
 
     // POST /api/goals
     async createGoal(goal) {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) {
+        await delay(150);
+        const newGoal = { id: "g_" + Date.now(), status: "ACTIVE", currentAmount: 0, ...goal };
+        goals.push(newGoal);
+        return newGoal;
+      }
       return await api('/goals', { method: 'POST', body: JSON.stringify(goal) });
     },
 
     // GET /api/purchases/history
     async getDecisions() {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) { await delay(100); return []; }
       return (await api('/purchases/history')).map(adaptDecisionItem);
     },
 
     // GET /api/purchases/{id}
     async getDecision(id) {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) { await delay(80); return null; }
       return adaptDecisionItem(await api(`/purchases/${id}`));
     },
 
     // GET /api/purchases/planned (derived client-side from history)
     async getPlannedPurchases() {
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) { await delay(80); return []; }
       const history = (await api('/purchases/history')).map(adaptDecisionItem);
       return history
         .filter(d => d.analysis.decision === 'WAIT' || d.analysis.decision === 'CONSIDER_ALTERNATIVE')
@@ -241,7 +246,10 @@ const WorthWiseAPI = (() => {
         reason: purchaseInput.reason,
         productUrl: purchaseInput.productUrl,
       };
-      if (!isAuthenticated()) throw new Error('Login required');
+      if (!isAuthenticated()) {
+        await delay(1600); // simulated engine latency for the loading sequence
+        return DecisionEngineMock.run(purchaseInput, financialProfile, goals);
+      }
       return adaptAnalysis(await api('/purchases/evaluate', { method: 'POST', body: JSON.stringify(payload) }));
     },
   };
@@ -329,7 +337,7 @@ const DecisionEngineMock = (() => {
   return { run, simulate };
 })();
 /**
- * WorthWise — shared shell logic used across every app page.
+ * SpendWise — shared shell logic used across every app page.
  */
 
 const Fmt = {
@@ -403,7 +411,7 @@ function logoMarkup(){
       <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
       <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     </svg>
-    <span class="logo-word">WorthWise</span>
+    <span class="logo-word">SpendWise</span>
   </div>`;
 }
 
@@ -436,7 +444,7 @@ function sidebarMarkup(activePath){
         <div class="pemail">${currentUserCache.email || ''}</div>
       </div>
     </a>
-    <button class="btn btn-ghost btn-block btn-sm mt-8" onclick="WorthWiseAPI.logout()">Logout</button>
+    <button class="btn btn-ghost btn-block btn-sm mt-8" onclick="SpendWiseAPI.logout()">Logout</button>
   `;
 }
 
@@ -456,7 +464,7 @@ function mobileTopbarMarkup(){
 }
 
 function initShell(){
-  const path = (WorthWiseRouter.currentRoute || 'dashboard') + '.html';
+  const path = (SpendWiseRouter.currentRoute || 'dashboard') + '.html';
   const sidebar = document.getElementById('sidebar');
   const topbarSlot = document.getElementById('mobile-topbar-slot');
   if (sidebar) sidebar.innerHTML = sidebarMarkup(path);
@@ -502,15 +510,15 @@ function decisionDial({ value, color = 'var(--pine)', size = 180, trackColor = '
 
 document.addEventListener('DOMContentLoaded', initShell);
 async function loadDashboard(){
-  if (!WorthWiseAPI.isAuthenticated()) return;
+  if (!SpendWiseAPI.isAuthenticated()) return;
   if (!document.getElementById('greeting')) return; // not on the dashboard page
   try {
     const [user, profile, goals, decisions, planned] = await Promise.all([
-      WorthWiseAPI.getCurrentUser(),
-      WorthWiseAPI.getFinancialProfile(),
-      WorthWiseAPI.getGoals(),
-      WorthWiseAPI.getDecisions(),
-      WorthWiseAPI.getPlannedPurchases(),
+      SpendWiseAPI.getCurrentUser(),
+      SpendWiseAPI.getFinancialProfile(),
+      SpendWiseAPI.getGoals(),
+      SpendWiseAPI.getDecisions(),
+      SpendWiseAPI.getPlannedPurchases(),
     ]);
 
     currentUserCache = user;
@@ -599,7 +607,7 @@ function renderHealth(user, profile){
   const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
   const label = score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'Set up profile';
   const healthCopy = income <= 0
-    ? 'Add your real income, expenses, savings, and goals. WorthWise will update this score from your saved database profile.'
+    ? 'Add your real income, expenses, savings, and goals. SpendWise will update this score from your saved database profile.'
     : surplus < 0
       ? 'Your monthly expenses are higher than your income, so purchases should wait until cash flow improves.'
       : 'This score is calculated from your saved income, expenses, surplus, and emergency fund progress.';
@@ -752,8 +760,8 @@ function emptyState(title, body){
       url: document.getElementById('p-url').value,
     };
 
-    currentProfile = await WorthWiseAPI.getFinancialProfile();
-    const goals = await WorthWiseAPI.getGoals();
+    currentProfile = await SpendWiseAPI.getFinancialProfile();
+    const goals = await SpendWiseAPI.getGoals();
     // Fall back to a placeholder goal so nothing downstream ever has to
     // null-check `goal` again — this was the source of the crash where
     // buildNarrative tried to read `goal.name` on `undefined`.
@@ -790,13 +798,16 @@ function emptyState(title, body){
   document.getElementById('analyze-btn').addEventListener('click', async () => {
     step2.style.display = 'none';
     stepLoading.style.display = 'block';
-    document.getElementById('loading-dial').innerHTML = decisionDial({ value: 40, color: 'var(--indigo)', size: 130 });
     setProgress(3);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    await runLoadingSequence();
 
-    const analysisRaw = await WorthWiseAPI.analyzePurchase(currentPurchase);
+    let apiDone = false;
+    const loadingAnimation = runLoadingSequence(() => apiDone);
+
+    const analysisRaw = await SpendWiseAPI.analyzePurchase(currentPurchase);
     currentAnalysis = analysisRaw;
+    apiDone = true;
+    await loadingAnimation;
 
     // Merge with a canned "reasons/alternatives/actionPlan" narrative so the
     // results read naturally regardless of what the numeric engine produced.
@@ -808,21 +819,43 @@ function emptyState(title, body){
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  function runLoadingSequence(){
+  // Loops through the loading steps and fills the gauge progressively while
+  // the real API request is in flight. `isDone()` is checked between steps;
+  // once it returns true the sequence finishes its current pass, jumps the
+  // gauge to 100%, and resolves — so the animation never "freezes" waiting
+  // on a slow response, no matter how long the request actually takes.
+  function runLoadingSequence(isDone){
     return new Promise((resolve) => {
       const items = document.querySelectorAll('#loading-steps li');
+      const dialEl = document.getElementById('loading-dial');
+      const stepTargets = [15, 35, 55, 72, 86];
+      let maxReached = 8;
       let i = 0;
-      function next(){
-        if (i > 0) items[i-1].classList.remove('active'), items[i-1].classList.add('done');
-        if (i < items.length){
-          items[i].classList.add('active');
-          i++;
-          setTimeout(next, 420);
-        } else {
-          resolve();
-        }
+
+      function renderDial(pct){
+        if (dialEl) dialEl.innerHTML = decisionDial({ value: pct, color: 'var(--indigo)', size: 130 });
       }
-      next();
+      renderDial(maxReached);
+
+      function tick(){
+        const idx = i % items.length;
+        items.forEach((it, n) => {
+          it.classList.toggle('active', n === idx);
+          it.classList.toggle('done', n < idx || (n !== idx && i >= items.length));
+        });
+        maxReached = Math.max(maxReached, stepTargets[idx]);
+        renderDial(maxReached);
+        i++;
+
+        if (isDone() && idx === items.length - 1){
+          items.forEach((it) => { it.classList.remove('active'); it.classList.add('done'); });
+          renderDial(100);
+          setTimeout(resolve, 220);
+          return;
+        }
+        setTimeout(tick, 650);
+      }
+      tick();
     });
   }
 
@@ -913,15 +946,15 @@ function emptyState(title, body){
         <div class="ai-response-head">
           <span class="badge-ai">🤖 AI take</span>
         </div>
-        <p class="ai-response-text" id="ai-response-text"></p>
+        <p class="ai-response-text">${(analysis.aiExplanation && analysis.aiExplanation.trim()) ? analysis.aiExplanation : narrative.supportText}</p>
       </div>
 
       <div class="card mt-24 fade-up">
         <h2 class="section-title">Why we recommend ${meta.word === 'BUY' ? 'buying' : meta.word === 'WAIT' ? 'waiting' : meta.word === 'SKIP' ? 'skipping' : 'an alternative'}</h2>
         <p class="section-sub">Backend-calculated signals behind this verdict — cash flow, savings buffer, and goal timeline.</p>
         <div>
-          ${narrative.reasons.map((r, ri) => `
-            <div class="reason-row" style="--ri:${ri}">
+          ${narrative.reasons.map(r => `
+            <div class="reason-row">
               <span class="reason-icon ${r.type}">
                 ${r.type === 'positive'
                   ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>'
@@ -1033,11 +1066,6 @@ function emptyState(title, body){
       </div>
     `;
 
-    const aiText = (analysis.aiExplanation && analysis.aiExplanation.trim()) ? analysis.aiExplanation : narrative.supportText;
-    typewriteInto(document.getElementById('ai-response-text'), aiText, 14);
-
-    if (analysis.decision === 'BUY') fireConfetti();
-
     renderTimeline(purchase, profile, analysis);
     initSimulator(purchase, profile, goal);
 
@@ -1100,7 +1128,7 @@ function emptyState(title, body){
   let searchTerm = '';
 
   async function init(){
-    allDecisions = await WorthWiseAPI.getDecisions();
+    allDecisions = await SpendWiseAPI.getDecisions();
     render();
 
     document.querySelectorAll('.filter-pill').forEach(pill => {
@@ -1154,7 +1182,7 @@ function emptyState(title, body){
     emptySlot.innerHTML = '';
 
     tbody.innerHTML = list.map(d => `
-      <tr onclick="window.WorthWiseDecisions.open('${d.purchase.id}')">
+      <tr onclick="window.SpendWiseDecisions.open('${d.purchase.id}')">
         <td class="prod-name">${d.purchase.name}</td>
         <td class="num">${Fmt.currency(d.purchase.price)}</td>
         <td><span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span></td>
@@ -1163,7 +1191,7 @@ function emptyState(title, body){
     `).join('');
 
     cardsEl.innerHTML = list.map(d => `
-      <div class="dcard mb-16" onclick="window.WorthWiseDecisions.open('${d.purchase.id}')">
+      <div class="dcard mb-16" onclick="window.SpendWiseDecisions.open('${d.purchase.id}')">
         <div class="dc-top">
           <span class="dc-name">${d.purchase.name}</span>
           <span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span>
@@ -1174,7 +1202,7 @@ function emptyState(title, body){
   }
 
   async function openDetail(id){
-    const d = await WorthWiseAPI.getDecision(id);
+    const d = await SpendWiseAPI.getDecision(id);
     if (!d) return;
     const content = document.getElementById('detail-content');
     content.innerHTML = `
@@ -1205,11 +1233,11 @@ function emptyState(title, body){
     history.replaceState(null, '', window.location.pathname + window.location.search + '#/decisions');
   }
 
-  window.WorthWiseDecisions = { open: openDetail, reinit: init };
+  window.SpendWiseDecisions = { open: openDetail, reinit: init };
   document.addEventListener('DOMContentLoaded', init);
 })();
 /* ------------------------------------------------------------------ *
- * WorthWise — single-file router
+ * SpendWise — single-file router
  * Shows/hides page sections based on the URL hash instead of loading
  * separate .html files. Routes: #/dashboard #/analyze #/decisions
  * #/goals #/profile  (empty hash = landing page)
@@ -1217,7 +1245,7 @@ function emptyState(title, body){
 
 const ROUTES = ['dashboard', 'analyze', 'decisions', 'goals', 'profile'];
 const APP_ROUTES = ['dashboard', 'analyze', 'decisions', 'goals', 'profile'];
-const WorthWiseRouter = { currentRoute: 'dashboard' };
+const SpendWiseRouter = { currentRoute: 'dashboard' };
 
 function parseHash(){
   let h = window.location.hash || '';
@@ -1239,7 +1267,7 @@ function navigate(){
   }
 
   const target = [...ROUTES, 'auth'].includes(route) ? route : 'dashboard';
-  if (APP_ROUTES.includes(target) && !WorthWiseAPI.isAuthenticated()) {
+  if (APP_ROUTES.includes(target) && !SpendWiseAPI.isAuthenticated()) {
     window.location.hash = '#/auth';
     return;
   }
@@ -1251,35 +1279,18 @@ function navigate(){
     if (el) el.style.display = (r === target) ? '' : 'none';
   });
 
-  WorthWiseRouter.currentRoute = target;
-
-  // The sidebar/mobile-topbar are the signed-in shell — they must never be
-  // visible (even stale/leftover markup from a previous session) while the
-  // user is on the auth screen, or it implies they're logged in when they
-  // are not.
-  const sidebarEl = document.getElementById('sidebar');
-  const topbarSlot = document.getElementById('mobile-topbar-slot');
-  const mainEl = document.querySelector('.app-shell .main');
-  if (target === 'auth') {
-    if (sidebarEl) { sidebarEl.innerHTML = ''; sidebarEl.style.display = 'none'; }
-    if (topbarSlot) { topbarSlot.innerHTML = ''; topbarSlot.style.display = 'none'; }
-    if (mainEl) mainEl.style.width = '100%';
-  } else {
-    if (sidebarEl) sidebarEl.style.display = '';
-    if (topbarSlot) topbarSlot.style.display = '';
-    if (mainEl) mainEl.style.width = '';
-    initShell();
-  }
+  SpendWiseRouter.currentRoute = target;
+  if (target !== 'auth') initShell();
 
   if (target === 'decisions') {
-    if (window.WorthWiseDecisions) window.WorthWiseDecisions.reinit();
+    if (window.SpendWiseDecisions) window.SpendWiseDecisions.reinit();
     const params = new URLSearchParams(query);
     const id = params.get('id');
-    if (id && window.WorthWiseDecisions) window.WorthWiseDecisions.open(id);
+    if (id && window.SpendWiseDecisions) window.SpendWiseDecisions.open(id);
   }
   if (target === 'dashboard') loadDashboard();
-  if (target === 'goals' && window.WorthWiseGoals) window.WorthWiseGoals.reinit();
-  if (target === 'profile' && window.WorthWiseProfile) window.WorthWiseProfile.reinit();
+  if (target === 'goals' && window.SpendWiseGoals) window.SpendWiseGoals.reinit();
+  if (target === 'profile' && window.SpendWiseProfile) window.SpendWiseProfile.reinit();
 
   window.scrollTo(0, 0);
 }
@@ -1302,99 +1313,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ---------------------------------------------------------------
-// Interactive auth card — tabbed Login / Create account switcher
-// ---------------------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-  const slider = document.getElementById('auth-tab-slider');
-  const tabLogin = document.getElementById('tab-login');
-  const tabRegister = document.getElementById('tab-register');
-  const panelLogin = document.getElementById('panel-login');
-  const panelRegister = document.getElementById('panel-register');
-  if (!slider || !tabLogin || !tabRegister) return;
-
-  function showAuthTab(which){
-    const toRegister = which === 'register';
-    slider.classList.toggle('to-register', toRegister);
-    tabLogin.classList.toggle('active', !toRegister);
-    tabRegister.classList.toggle('active', toRegister);
-    panelLogin.hidden = toRegister;
-    panelRegister.hidden = !toRegister;
-    const status = document.getElementById('auth-status');
-    if (status) status.textContent = '';
-  }
-
-  document.body.addEventListener('click', (e) => {
-    const trigger = e.target.closest('[data-auth-tab]');
-    if (!trigger) return;
-    showAuthTab(trigger.dataset.authTab);
-  });
-});
-
-// ---------------------------------------------------------------
-// Scroll-reveal animations (landing page sections)
-// ---------------------------------------------------------------
-function initScrollReveal(){
-  const els = document.querySelectorAll('.reveal:not(.revealed)');
-  if (!els.length) return;
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('revealed');
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-  els.forEach((el, i) => {
-    el.style.transitionDelay = `${(i % 6) * 80}ms`;
-    io.observe(el);
-  });
-}
-document.addEventListener('DOMContentLoaded', initScrollReveal);
-
-// ---------------------------------------------------------------
-// Typewriter effect — used for the AI-generated explanation text
-// ---------------------------------------------------------------
-function typewriteInto(el, text, speed){
-  if (!el) return;
-  speed = speed || 14;
-  el.textContent = '';
-  const cursor = document.createElement('span');
-  cursor.className = 'tw-cursor';
-  el.appendChild(cursor);
-  let i = 0;
-  (function tick(){
-    if (i < text.length) {
-      cursor.insertAdjacentText('beforebegin', text.charAt(i));
-      i++;
-      setTimeout(tick, speed);
-    } else {
-      cursor.remove();
-    }
-  })();
-}
-
-// ---------------------------------------------------------------
-// Tiny confetti burst — celebrates a "BUY" verdict
-// ---------------------------------------------------------------
-function fireConfetti(){
-  const colors = ['#22C08A', '#6366F1', '#EC4899', '#F5B14C'];
-  const count = 26;
-  for (let i = 0; i < count; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    const size = 6 + Math.random() * 6;
-    piece.style.left = Math.random() * 100 + 'vw';
-    piece.style.width = size + 'px';
-    piece.style.height = (size * 0.4) + 'px';
-    piece.style.background = colors[i % colors.length];
-    piece.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
-    piece.style.animationDelay = (Math.random() * 0.3) + 's';
-    document.body.appendChild(piece);
-    piece.addEventListener('animationend', () => piece.remove());
-  }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
@@ -1403,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     status.textContent = 'Logging in...';
     try {
-      currentUserCache = await WorthWiseAPI.login(document.getElementById('login-email').value, document.getElementById('login-password').value);
+      currentUserCache = await SpendWiseAPI.login(document.getElementById('login-email').value, document.getElementById('login-password').value);
       window.location.hash = '#/dashboard';
       window.location.reload();
     } catch (err) {
@@ -1414,7 +1332,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     status.textContent = 'Creating account...';
     try {
-      currentUserCache = await WorthWiseAPI.register(document.getElementById('register-email').value, document.getElementById('register-password').value);
+      currentUserCache = await SpendWiseAPI.register(document.getElementById('register-email').value, document.getElementById('register-password').value);
       window.location.hash = '#/profile';
       window.location.reload();
     } catch (err) {
@@ -1426,8 +1344,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const GOAL_ICONS_MAP = { shield: ICONS.target, laptop: '<rect x="4" y="4" width="16" height="10" rx="1.5"/><path d="M2 18h20l-1.5-3H3.5L2 18Z"/>', plane: '<path d="M12 2 3 14l4-1 2 4 3-6 3 6 2-4 4 1L12 2Z"/>', book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/>' };
 
   async function loadGoalsPage(){
-    if (!WorthWiseAPI.isAuthenticated()) return;
-    const goals = await WorthWiseAPI.getGoals();
+    if (!SpendWiseAPI.isAuthenticated()) return;
+    const goals = await SpendWiseAPI.getGoals();
     const grid = document.getElementById('goals-grid');
     if (!grid) return;
     grid.innerHTML = goals.map(g => {
@@ -1480,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', () => {
       status.textContent = 'Saving...';
       const data = new FormData(form);
       try {
-        await WorthWiseAPI.createGoal({
+        await SpendWiseAPI.createGoal({
           name: data.get('name'),
           targetAmount: Number(data.get('targetAmount')) || 0,
           currentAmount: Number(data.get('currentAmount')) || 0,
@@ -1495,16 +1413,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  window.WorthWiseGoals = { reinit: loadGoalsPage };
+  window.SpendWiseGoals = { reinit: loadGoalsPage };
   document.addEventListener('DOMContentLoaded', loadGoalsPage);
 
   const EXPENSE_LABELS = { housing: 'Housing', food: 'Food', transport: 'Transport', subscriptions: 'Subscriptions', other: 'Other' };
   let profileState = null;
 
   async function loadProfilePage(){
-    if (!WorthWiseAPI.isAuthenticated()) return;
+    if (!SpendWiseAPI.isAuthenticated()) return;
     if (!document.getElementById('in-income')) return;
-    profileState = await WorthWiseAPI.getFinancialProfile();
+    profileState = await SpendWiseAPI.getFinancialProfile();
     document.getElementById('in-income').value = profileState.monthlyIncome;
     document.getElementById('in-savings').value = profileState.currentSavings;
 
@@ -1526,7 +1444,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setActivePill('pref-priority', profileState.preferences.savingPriority);
     setActivePill('pref-purchase', profileState.preferences.purchasePreference);
   }
-  window.WorthWiseProfile = { reinit: loadProfilePage };
+  window.SpendWiseProfile = { reinit: loadProfilePage };
   document.addEventListener('DOMContentLoaded', loadProfilePage);
 
   function setActivePill(groupId, val){
@@ -1557,7 +1475,7 @@ document.addEventListener('DOMContentLoaded', () => {
       purchasePreference: activeValue('pref-purchase'),
     };
     try {
-      const savedProfile = await WorthWiseAPI.updateFinancialProfile(patch);
+      const savedProfile = await SpendWiseAPI.updateFinancialProfile(patch);
       renderSnapshot(savedProfile);
       renderHealth(currentUserCache, savedProfile);
       document.getElementById('save-status').textContent = 'Saved just now';
@@ -1569,5 +1487,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('landing-dial').innerHTML = decisionDial({ value: 62, color: 'var(--wait)', size: 150 });
+  const landingDialEl = document.getElementById('landing-dial');
+  if (landingDialEl) landingDialEl.innerHTML = decisionDial({ value: 62, color: 'var(--wait)', size: 150 });
 // goals inline + profile inline + landing inline appended above
