@@ -597,10 +597,22 @@ input[type="range"]::-moz-range-thumb{
   .hero-visual{
     max-width: 880px; margin: 46px auto 0; padding: 0 24px;
   }
+
+  /* FIX (issue 1): the hero-frame previously relied on plain document
+     order for stacking. That's usually fine, but it left no explicit
+     guarantee that the decision gauge stays above the wallet/money
+     animation module. Making this container an explicit column flex
+     with ordered children pins the gauge above the animation for good,
+     regardless of any future content changes inside either block. */
   .hero-frame{
     background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
     box-shadow: var(--shadow-lg); overflow:hidden;
+    display:flex; flex-direction:column;
   }
+  .hero-frame .bar{ order:0; }
+  .hero-frame .decision-preview{ order:1; }
+  .hero-frame .wallet-anim-module{ order:2; }
+
   .hero-frame .bar{ display:flex; gap:6px; padding: 14px 18px; border-bottom:1px solid var(--border); }
   .hero-frame .dot-b{ width:9px;height:9px;border-radius:50%; background: var(--border-strong); }
 
