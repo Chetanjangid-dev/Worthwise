@@ -3,76 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light">
 <title>SpendWise — Think before you spend.</title>
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- ===================== LANDING PAGE ===================== -->
-<div id="view-landing" class="landing-page">
-  <nav class="landing-topbar">
-    <div class="logo">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <rect x="1" y="6" width="24" height="17" rx="4" fill="#0F6B4F"/>
-        <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0B4E3A"/>
-        <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
-        <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      </svg>
-      <span class="logo-word">SpendWise</span>
-    </div>
-  </nav>
+<div id="view-landing">
+<div class="aurora-bg"><div class="aurora-blob a1"></div><div class="aurora-blob a2"></div><div class="aurora-blob a3"></div></div>
+<div class="landing-nav">
+  <div class="logo">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+      <rect x="1" y="6" width="24" height="17" rx="4" fill="#22C08A"/>
+      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0F3D2E"/>
+      <circle cx="18.5" cy="14.5" r="3.1" fill="#0A0C0F"/>
+      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#22C08A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <span class="logo-word">SpendWise</span>
+  </div>
+  <div class="links">
+    <a href="javascript:void(0)" data-scroll-target="how">How it works</a>
+    <a href="javascript:void(0)" data-scroll-target="value">Why SpendWise</a>
+  </div>
+  <a href="#/auth" class="btn btn-primary btn-sm btn-get-started">Get Started</a>
+</div>
 
-  <section class="landing-hero">
-    <div class="landing-hero-text">
-      <p class="eyebrow">Personal Purchase Decision Engine</p>
-      <h1 class="landing-title">Think before you spend.</h1>
-      <p class="landing-desc">Make purchases that fit your life, not just your budget. SpendWise weighs every purchase against your income, goals, and future plans before you buy.</p>
-      <a href="#/auth" class="btn btn-primary landing-cta">Get started</a>
-    </div>
+<section class="hero fade-up">
+  <div class="eyebrow">Personal Purchase Decision Engine</div>
+  <h1>Think before <em>you spend.</em></h1>
+  <p class="lead">Make purchases that fit your life — not just your budget. SpendWise weighs every purchase against your income, goals, and future plans before you buy.</p>
+  <div class="hero-ctas">
+    <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
+  </div>
+</section>
 
-    <div class="landing-hero-visual">
-      <div class="money-anim">
-        <div class="app-module">
-          <div class="wallet-container">
-            <div class="wallet-back"></div>
-            <div class="money-note"><span class="note-text">₹500</span></div>
-            <div class="wallet-front"></div>
-          </div>
-          <div class="human-arm">
-            <div class="sleeve"></div>
-            <div class="cuff"></div>
-            <svg class="hand-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M30 10 C30 10, 70 10, 70 30 C70 45, 65 55, 55 60 C45 65, 30 50, 30 30 Z" fill="#f1c27d"/>
-              <path d="M32 25 C20 32, 18 45, 26 52 C32 55, 36 45, 36 35 Z" fill="#e0b06c"/>
-              <rect x="36" y="42" width="10" height="38" rx="5" fill="#f1c27d" transform="rotate(8 36 42)"/>
-              <rect x="47" y="42" width="10" height="42" rx="5" fill="#f1c27d" transform="rotate(3 47 42)"/>
-              <rect x="58" y="40" width="9" height="39" rx="4.5" fill="#e0b06c" transform="rotate(-3 58 40)"/>
-              <rect x="67" y="36" width="8" height="32" rx="4" fill="#d4a360" transform="rotate(-8 67 36)"/>
-            </svg>
-          </div>
-          <div class="alert-popup popup-stop"><h2>Stop! 🛑</h2><p>It can destroy your savings.</p></div>
-          <div class="alert-popup popup-allow"><h2>Approved! 🎉</h2><p>Yes, you can take it.</p></div>
-        </div>
+<div class="hero-visual fade-up">
+  <div class="hero-frame">
+    <div class="bar"><span class="dot-b"></span><span class="dot-b"></span><span class="dot-b"></span></div>
+    <div class="decision-preview">
+      <div class="dial-wrap">
+        <div id="landing-dial"></div>
+        <div class="verdict">WAIT</div>
       </div>
-
-      <div class="hero-frame">
-        <div class="hero-frame-bar"><span></span><span></span><span></span></div>
-        <div class="decision-preview">
-          <div class="dial-wrap">
-            <div id="landing-dial"></div>
-            <div class="verdict">Wait</div>
-          </div>
-          <div class="meta">
-            <h3>Wireless headphones · ₹4,999</h3>
-            <p class="muted" style="font-size:14.5px;">Buying now pushes your Goa trip fund back by 3 weeks. A 20% sale in two weeks closes that gap completely.</p>
-          </div>
-        </div>
+      <div class="meta">
+        <span class="badge-ai badge-ai">AI Explanation</span>
+        <h3 class="mt-8">Your purchase · Your numbers</h3>
+        <p class="muted" style="font-size:14.5px;">Create your profile, add goals, and SpendWise will calculate the real financial impact before suggesting a decision.</p>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <footer class="landing-footer">A personal purchase decision engine for everyday spending decisions.</footer>
+<section class="value-strip" id="value">
+  <div class="item reveal">
+    <div class="n">Affordability</div>
+    <h3>Beyond your bank balance</h3>
+    <p>SpendWise checks cash flow, savings buffer, and existing commitments — not just whether the money is sitting in your account today.</p>
+  </div>
+  <div class="item reveal">
+    <div class="n">Goal impact</div>
+    <h3>See what a purchase delays</h3>
+    <p>Every recommendation shows exactly how a purchase shifts your goal timelines — in months, not vague warnings.</p>
+  </div>
+  <div class="item reveal">
+    <div class="n">Timing</div>
+    <h3>Buy now, wait, or skip</h3>
+    <p>A clear, explainable verdict — with a simulator to see how waiting, saving more, or a discount changes the outcome.</p>
+  </div>
+</section>
+
+<section class="flow" id="how">
+  <h2 class="reveal">A financial decision workspace</h2>
+  <p class="sub reveal">Not a chatbot. Not a spreadsheet. A structured way to reason through a purchase.</p>
+  <div class="flow-steps">
+    <div class="step reveal"><span class="pill">Can I afford it?</span></div>
+    <span class="arrow">→</span>
+    <div class="step reveal"><span class="pill">What will it change?</span></div>
+    <span class="arrow">→</span>
+    <div class="step reveal"><span class="pill">Impact on my goals?</span></div>
+    <span class="arrow">→</span>
+    <div class="step reveal"><span class="pill">What if I wait?</span></div>
+    <span class="arrow">→</span>
+    <div class="step reveal"><span class="pill">What should I do?</span></div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <div class="cta-inner reveal">
+    <h2>Your next purchase deserves five minutes of thought.</h2>
+    <p>Set up your financial profile once — SpendWise handles the analysis every time after.</p>
+    <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
+  </div>
+</section>
+
+<footer class="landing-footer">SpendWise · A personal purchase decision engine · Prototype build</footer>
 </div>
 
 <!-- ===================== APP SHELL ===================== -->
@@ -85,31 +109,42 @@
 
     <main class="main">
 
-      <div class="page auth-page" id="view-auth" style="display:none;">
-<div class="page-header">
-        <div class="eyebrow">Account</div>
-        <h1 class="page-title">Sign in to your workspace</h1>
-        <p class="page-sub">Your profile, goals, and decisions are stored in PostgreSQL under your account.</p>
+      <div class="page" id="view-auth" style="display:none;">
+<div class="page-header" style="text-align:center;">
+        <div class="eyebrow" style="justify-content:center; display:flex;">Account</div>
+        <h1 class="page-title">Welcome to your SpendWise workspace</h1>
+        <p class="page-sub">Your profile, goals, and decisions are stored under your account.</p>
       </div>
-      <div class="card auth-split-card">
-        <div class="auth-half">
-          <h2 class="section-title">Login</h2>
-          <p class="section-sub">Use an existing account.</p>
-          <form id="login-form">
-            <div class="field"><label>Email</label><input class="input" id="login-email" type="email" required></div>
-            <div class="field"><label>Password</label><input class="input" id="login-password" type="password" required></div>
-            <button class="btn btn-primary btn-block" type="submit">Login</button>
-          </form>
-        </div>
-        <div class="auth-divider"><span>or</span></div>
-        <div class="auth-half">
-          <h2 class="section-title">Create account</h2>
-          <p class="section-sub">Start with an empty profile and add your real numbers.</p>
-          <form id="register-form">
-            <div class="field"><label>Email</label><input class="input" id="register-email" type="email" required></div>
-            <div class="field"><label>Password</label><input class="input" id="register-password" type="password" minlength="8" required></div>
-            <button class="btn btn-secondary btn-block" type="submit">Create account</button>
-          </form>
+
+      <div class="auth-wrap">
+        <div class="auth-card fade-up">
+          <div class="auth-tabs">
+            <div class="auth-tab-slider" id="auth-tab-slider"></div>
+            <div class="auth-tab active" data-auth-tab="login" id="tab-login">Login</div>
+            <div class="auth-tab" data-auth-tab="register" id="tab-register">Create account</div>
+          </div>
+          <div class="auth-panels">
+            <div class="auth-panel" id="panel-login">
+              <h2 class="section-title">Welcome back</h2>
+              <p class="section-sub">Sign in to pick up right where you left off.</p>
+              <form id="login-form">
+                <div class="field"><label>Email</label><input class="input" id="login-email" type="email" required autocomplete="email"></div>
+                <div class="field"><label>Password</label><input class="input" id="login-password" type="password" required autocomplete="current-password"></div>
+                <button class="btn btn-primary btn-block btn-get-started" type="submit">Login</button>
+              </form>
+              <p class="muted mt-16" style="text-align:center; font-size:13.5px;">New here? <a href="javascript:void(0)" data-auth-tab="register" style="color:var(--pine); font-weight:600;">Create an account</a></p>
+            </div>
+            <div class="auth-panel" id="panel-register" hidden>
+              <h2 class="section-title">Start fresh</h2>
+              <p class="section-sub">Create your profile and add your real numbers.</p>
+              <form id="register-form">
+                <div class="field"><label>Email</label><input class="input" id="register-email" type="email" required autocomplete="email"></div>
+                <div class="field"><label>Password</label><input class="input" id="register-password" type="password" minlength="8" required autocomplete="new-password"></div>
+                <button class="btn btn-primary btn-block btn-get-started" type="submit">Create account</button>
+              </form>
+              <p class="muted mt-16" style="text-align:center; font-size:13.5px;">Already have an account? <a href="javascript:void(0)" data-auth-tab="login" style="color:var(--pine); font-weight:600;">Login</a></p>
+            </div>
+          </div>
         </div>
       </div>
       <p class="muted mt-16" id="auth-status" style="text-align:center;"></p>
