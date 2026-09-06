@@ -411,6 +411,425 @@ function logoMarkup(){
       <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
       <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     </svg>
+    <span class="logo-word">Worthwise</span>
+  </div>`;
+}
+
+function sidebarMarkup(activePath){
+  const activeRoute = '#/' + activePath.replace('.html','');
+  const items = NAV_ITEMS.map(item => {
+    const isActive = item.scrollTarget ? false : (activeRoute === item.route);
+    return `<a class="nav-link${isActive ? ' active' : ''}" href="${item.route}"${item.scrollTarget ? ` data-scroll-target="${item.scrollTarget}"` : ''}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[item.icon]}</svg>
+      ${item.label}
+    </a>`;
+  }).join('');
+
+  return `
+    ${logoMarkup()}
+    <nav class="nav-group">${items}</nav>
+    <div class="sidebar-spacer"></div>
+    <button class="sidebar-cta btn-block" onclick="window.location.hash='#/analyze'">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Analyze a Purchase
+    </button>
+    <div class="health-mini mt-16">
+      <div class="label">Your Financial Health</div>
+      <div class="value"><span class="dot"></span> Good</div>
+    </div>
+    <a class="profile-mini" href="#/profile">
+      <div class="avatar">CH</div>
+      <div>
+        <div class="pname">${currentUserCache.name || 'User'}</div>
+        <div class="pemail">${currentUserCache.email || ''}</div>
+      </div>
+    </a>
+    <button class="btn btn-ghost btn-block btn-sm mt-8" onclick="SpendWiseAPI.logout()">Logout</button>
+  `;
+}
+
+/**
+ * FIX (issue 3): this used to render the full topbar — including the
+ * hamburger drawer-toggle — unconditionally, on every page including the
+ * logged-out auth screen. The backend already refuses those routes, but
+ * the UI still showed the button and, once tapped, the full app nav
+ * inside the drawer. Now it takes the auth state explicitly: logged-out
+ * users get just the logo (no toggle button, nothing to open), logged-in
+ * users get the normal topbar with the drawer + quick-analyze shortcut.
+ */
+function mobileTopbarMarkup(authed){
+  if (!authed) {
+    return `<div class="mobile-topbar">${logoMarkup()}</div>`;
+  }
+  return `
+    <div class="mobile-topbar">
+      <button class="drawer-toggle" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      ${logoMarkup()}
+      <a href="#/analyze" class="mobile-cta" aria-label="Analyze a purchase">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </a>
+    </div>
+    <div class="drawer-overlay"></div>
+  `;
+}
+
+/**
+ * FIX (issue 3, continued): initShell() now checks SpendWiseAPI.isAuthenticated()
+ * before rendering anything into the sidebar. When logged out, the sidebar
+ * element is emptied AND hidden (display:none) and the mobile topbar   // Public "endpoint" functions — async to mirror real network calls
+  // ---------------------------------------------------------------
+
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  const API_BASE = '/api';
+  let authToken = localStorage.getItem('spendwise_token') || '';
+
+  function isAuthenticated(){
+    return Boolean(localStorage.getItem('spendwise_token'));
+  }
+
+  async function ensureAuth(){
+    if (authToken) return authToken;
+    throw new Error('Login required');
+  }
+
+  async function authenticate(path, email, password){
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Authentication failed');
+    const data = await res.json();
+    authToken = data.token;
+    localStorage.setItem('spendwise_token', authToken);
+    return data.user;
+  }
+
+  // Keep every signed-in screen backend-first. A failed request should be
+  // visible to the user instead of being hidden behind local placeholder data.
+  async function api(path, options = {}){
+    const token = await ensureAuth();
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options.headers || {}) },
+    });
+    if (res.status === 401) {
+      localStorage.removeItem('spendwise_token');
+      authToken = '';
+      throw new Error('Unauthorized');
+    }
+    if (!res.ok) {
+      let msg = 'Request failed';
+      try { msg = (await res.json()).message || (await res.text()) || msg; } catch (_) { try { msg = await res.text(); } catch (__) {} }
+      throw new Error(msg);
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  function toUiDecision(decision){
+    return decision === 'BUY_NOW' ? 'BUY' : decision === 'DONT_BUY' ? 'SKIP' : decision;
+  }
+
+  function adaptAnalysis(a){
+    return {
+      ...a,
+      decision: toUiDecision(a.decision),
+      estimatedAffordableDate: a.estimatedPurchaseDate,
+      goalCompletionAfter: a.goalCompletionDate,
+      reasons: a.reasons || [],
+      alternatives: a.alternatives || [],
+      actionPlan: a.actionPlan || [],
+    };
+  }
+
+  function adaptProfile(profile){
+    const fallbackBreakdown = financialProfile.expenseBreakdown;
+    const expenseBreakdown = profile.expenseBreakdown || fallbackBreakdown;
+    return {
+      ...financialProfile,
+      ...profile,
+      expenseBreakdown,
+      monthlyExpenses: Number(profile.monthlyExpenses ?? Object.values(expenseBreakdown).reduce((sum, val) => sum + Number(val || 0), 0)),
+      commitments: profile.commitments || financialProfile.commitments,
+      preferences: profile.preferences || financialProfile.preferences,
+      savingsRate: Number(profile.savingsRate ?? financialProfile.savingsRate),
+      debtBurden: profile.debtBurden || financialProfile.debtBurden,
+      emergencyBuffer: profile.emergencyBuffer || financialProfile.emergencyBuffer,
+    };
+  }
+
+  function adaptDecisionItem(d){
+    return { purchase: d.purchase, analysis: adaptAnalysis(d.analysis) };
+  }
+
+  // Unauthenticated reads return empty state. Signed-in reads always use the
+  // backend and let real errors surface.
+  return {
+    // GET /api/users/me
+    async getCurrentUser() {
+      if (!isAuthenticated()) { await delay(80); return { ...user }; }
+      return await api('/auth/me');
+    },
+    isAuthenticated,
+    async login(email, password){ return authenticate('/auth/login', email, password); },
+    async register(email, password){ return authenticate('/auth/register', email, password); },
+    logout(){
+      authToken = '';
+      localStorage.removeItem('spendwise_token');
+      window.location.hash = '#/auth';
+    },
+
+    // GET /api/profile
+    async getFinancialProfile() {
+      if (!isAuthenticated()) { await delay(80); return JSON.parse(JSON.stringify(financialProfile)); }
+      return adaptProfile(await api('/profile'));
+    },
+
+    // PUT /api/profile
+    async updateFinancialProfile(patch) {
+      if (!isAuthenticated()) {
+        await delay(150);
+        Object.assign(financialProfile, patch);
+        return JSON.parse(JSON.stringify(financialProfile));
+      }
+      return adaptProfile(await api('/profile', { method: 'PUT', body: JSON.stringify(patch) }));
+    },
+
+    // GET /api/goals
+    async getGoals() {
+      if (!isAuthenticated()) { await delay(80); return JSON.parse(JSON.stringify(goals)); }
+      return await api('/goals');
+    },
+
+    // GET /api/goals/{id}
+    async getGoal(id) {
+      if (!isAuthenticated()) {
+        await delay(60);
+        return JSON.parse(JSON.stringify(goals.find((g) => g.id === id)));
+      }
+      const all = await api('/goals');
+      return all.find((g) => g.id === id) || null;
+    },
+
+    // POST /api/goals
+    async createGoal(goal) {
+      if (!isAuthenticated()) {
+        await delay(150);
+        const newGoal = { id: "g_" + Date.now(), status: "ACTIVE", currentAmount: 0, ...goal };
+        goals.push(newGoal);
+        return newGoal;
+      }
+      return await api('/goals', { method: 'POST', body: JSON.stringify(goal) });
+    },
+
+    // GET /api/purchases/history
+    async getDecisions() {
+      if (!isAuthenticated()) { await delay(100); return []; }
+      return (await api('/purchases/history')).map(adaptDecisionItem);
+    },
+
+    // GET /api/purchases/{id}
+    async getDecision(id) {
+      if (!isAuthenticated()) { await delay(80); return null; }
+      return adaptDecisionItem(await api(`/purchases/${id}`));
+    },
+
+    // GET /api/purchases/planned (derived client-side from history)
+    async getPlannedPurchases() {
+      if (!isAuthenticated()) { await delay(80); return []; }
+      const history = (await api('/purchases/history')).map(adaptDecisionItem);
+      return history
+        .filter(d => d.analysis.decision === 'WAIT' || d.analysis.decision === 'CONSIDER_ALTERNATIVE')
+        .slice(0, 5)
+        .map(d => ({
+          id: d.purchase.id,
+          name: d.purchase.name,
+          price: d.purchase.price,
+          targetDate: d.analysis.estimatedAffordableDate || d.purchase.createdAt,
+          progress: Math.max(5, Math.min(95, d.analysis.score || 20)),
+        }));
+    },
+
+    // POST /api/purchases/evaluate
+    async analyzePurchase(purchaseInput) {
+      const payload = {
+        productName: purchaseInput.name,
+        name: purchaseInput.name,
+        category: purchaseInput.category,
+        price: purchaseInput.price,
+        purchaseType: purchaseInput.purchaseType,
+        monthlyEmi: purchaseInput.monthlyEmi || 0,
+        durationMonths: purchaseInput.durationMonths || null,
+        reason: purchaseInput.reason,
+        productUrl: purchaseInput.productUrl,
+      };
+      if (!isAuthenticated()) {
+        await delay(1600); // simulated engine latency for the loading sequence
+        return DecisionEngineMock.run(purchaseInput, financialProfile, goals);
+      }
+      return adaptAnalysis(await api('/purchases/evaluate', { method: 'POST', body: JSON.stringify(payload) }));
+    },
+  };
+})();
+
+/**
+ * A safe placeholder goal used anywhere the user has not created a real
+ * FinancialGoal yet. Keeps every downstream consumer (the mock decision
+ * engine, the narrative builder, and the results/timeline UI) from having
+ * to special-case "no goal" — they can always assume goal.name,
+ * goal.targetAmount, goal.currentAmount, and goal.targetDate exist.
+ */
+function withGoalFallback(goal, profile){
+  if (goal) return goal;
+  return {
+    id: null,
+    name: 'General Savings',
+    targetAmount: 0,
+    currentAmount: (profile && profile.currentSavings) || 0,
+    targetDate: new Date().toISOString(),
+    priority: 'MEDIUM',
+    isPlaceholder: true,
+  };
+}
+
+/**
+ * DecisionEngineMock
+ * -------------------------------------------------------------
+ * Stands in for the future Spring Boot decision engine. Contains just
+ * enough logic to produce believable, internally-consistent output for
+ * the "What if?" simulator. This entire block is disposable — it will
+ * be deleted once POST /api/purchases/{id}/analyze exists server-side.
+ */
+const DecisionEngineMock = (() => {
+  function run(purchase, profile, goalsList) {
+    const goal = withGoalFallback(goalsList.find((g) => g.id === profile.savingsGoalId) || goalsList[0], profile);
+    return simulate(purchase, profile, goal, { waitMonths: 0, extraSaving: 0, discount: 0 });
+  }
+
+  // Re-runs the engine for arbitrary simulator inputs (used by analyze.js)
+  function simulate(purchase, profile, goal, { waitMonths = 0, extraSaving = 0, discount = 0 }) {
+    goal = withGoalFallback(goal, profile);
+    const monthlySurplus = profile.monthlyIncome - profile.monthlyExpenses;
+    const effectivePrice = Math.max(purchase.price - discount, 0);
+    const savingsAfterPurchase = profile.currentSavings - effectivePrice + monthlySurplus * waitMonths + extraSaving * waitMonths;
+    const surplusAfterPurchase = monthlySurplus - (purchase.monthlyEmi || 0) + (waitMonths > 0 ? extraSaving : 0) - (waitMonths > 0 ? extraSaving : 0);
+    const monthlyAvailableForGoal = monthlySurplus - (purchase.monthlyEmi || 0);
+
+    const remainingForGoal = Math.max(goal.targetAmount - goal.currentAmount, 0);
+    const baselineMonths = monthlySurplus > 0 ? remainingForGoal / monthlySurplus : Infinity;
+    const impactedMonths = (monthlyAvailableForGoal + extraSaving) > 0
+      ? remainingForGoal / (monthlyAvailableForGoal + extraSaving)
+      : Infinity;
+
+    const goalDelayMonthsRaw = (isFinite(impactedMonths) && isFinite(baselineMonths)) ? (impactedMonths - baselineMonths) : 0;
+    const goalDelayMonths = Math.max(Math.round(goalDelayMonthsRaw), 0);
+
+    const bufferRatio = profile.currentSavings > 0 ? savingsAfterPurchase / profile.currentSavings : 0;
+    let decision = "BUY";
+    if (effectivePrice > profile.currentSavings * 0.6 && goalDelayMonths >= 2) decision = "WAIT";
+    if (effectivePrice > profile.currentSavings) decision = "SKIP";
+    if (waitMonths >= 3 || discount >= purchase.price * 0.15) decision = waitMonths > 0 ? "BUY" : decision;
+    if (bufferRatio < 0.1 && waitMonths === 0) decision = "SKIP";
+
+    const addMonths = (dateStr, months) => {
+      const d = new Date(dateStr);
+      d.setMonth(d.getMonth() + months);
+      return d;
+    };
+
+    const purchaseDate = addMonths(new Date().toISOString(), waitMonths);
+    const goalCompletionAfter = addMonths(goal.targetDate, waitMonths > 0 ? Math.max(goalDelayMonths - waitMonths, 0) : goalDelayMonths);
+
+    return {
+      decision,
+      affordability: effectivePrice <= profile.currentSavings ? "AFFORDABLE" : "CONDITIONALLY_AFFORDABLE",
+      estimatedPurchaseDate: purchaseDate.toISOString(),
+      goalCompletionDate: goalCompletionAfter.toISOString(),
+      goalDelayMonths: Math.max(goalDelayMonths - waitMonths, 0),
+      savingsAfterPurchase: Math.round(savingsAfterPurchase),
+      monthlySurplusAfterPurchase: Math.round(monthlyAvailableForGoal + extraSaving),
+    };
+  }
+
+  return { run, simulate };
+})();
+/**
+ * SpendWise — shared shell logic used across every app page.
+ */
+
+const Fmt = {
+  currency(n){
+    const rounded = Math.round(n);
+    return '₹' + rounded.toLocaleString('en-IN');
+  },
+  compactMonth(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  },
+  fullMonth(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  },
+  shortDate(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  },
+  relativeDays(dateStr){
+    const diff = Math.round((Date.now() - new Date(dateStr).getTime()) / 86400000);
+    if (diff <= 0) return 'today';
+    if (diff === 1) return '1 day ago';
+    if (diff < 7) return `${diff} days ago`;
+    const weeks = Math.round(diff / 7);
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+  }
+};
+
+// Animate a number counting up — used for headline stats.
+function animateCount(el, target, { prefix = '', duration = 900, decimals = 0 } = {}){
+  const start = 0;
+  const startTime = performance.now();
+  function tick(now){
+    const p = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    const val = start + (target - start) * eased;
+    el.textContent = prefix + Math.round(val).toLocaleString('en-IN');
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = prefix + Math.round(target).toLocaleString('en-IN');
+  }
+  requestAnimationFrame(tick);
+}
+
+const NAV_ITEMS = [
+  { href: 'dashboard.html', route: '#/dashboard', label: 'Overview', icon: 'grid' },
+  { href: 'analyze.html', route: '#/analyze', label: 'Analyze Purchase', icon: 'scan' },
+  { href: 'decisions.html', route: '#/decisions', label: 'My Decisions', icon: 'list' },
+  { href: 'goals.html', route: '#/goals', label: 'Goals', icon: 'target' },
+  { href: 'profile.html', route: '#/profile', label: 'Financial Profile', icon: 'sliders' },
+  { href: 'profile.html#settings', route: '#/profile', scrollTarget: 'settings-card', label: 'Settings', icon: 'settings' },
+];
+
+let currentUserCache = { name: 'User', email: '' };
+
+const ICONS = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  scan: '<path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"/><circle cx="12" cy="12" r="3.2"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.4"/><circle cx="3.5" cy="12" r="1.4"/><circle cx="3.5" cy="18" r="1.4"/>',
+  target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+  sliders: '<path d="M4 6h9M17 6h3M4 12h3M9 12h11M4 18h13M19 18h1"/><circle cx="14" cy="6" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+};
+
+function logoMarkup(){
+  return `
+  <div class="logo">
+    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+      <rect x="1" y="6" width="24" height="17" rx="4" fill="#0F6B4F"/>
+      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0B4E3A"/>
+      <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
+      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
     <span class="logo-word">SpendWise</span>
   </div>`;
 }
