@@ -403,17 +403,15 @@ const ICONS = {
 };
 
 function logoMarkup(){
-  // Uses the same pine palette as the landing-page logo (see index.html)
-  // so the brand mark is identical everywhere in the app, not just in name.
   return `
   <div class="logo">
     <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-      <rect x="1" y="6" width="24" height="17" rx="4" fill="#22C08A"/>
-      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0F3D2E"/>
-      <circle cx="18.5" cy="14.5" r="3.1" fill="#0A0C0F"/>
-      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#22C08A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <rect x="1" y="6" width="24" height="17" rx="4" fill="#0F6B4F"/>
+      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0B4E3A"/>
+      <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
+      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     </svg>
-    <span class="logo-word">Worthwise</span>
+    <span class="logo-word">SpendWise</span>
   </div>`;
 }
 
@@ -654,24 +652,10 @@ function renderHealth(user, profile){
   const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
   const label = score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'Set up profile';
   const healthCopy = income <= 0
-    ? 'Add your real income, expenses, savings, and goals. Worthwise will update this score from your saved database profile.'
+    ? 'Add your real income, expenses, savings, and goals. SpendWise will update this score from your saved database profile.'
     : surplus < 0
       ? 'Your monthly expenses are higher than your income, so purchases should wait until cash flow improves.'
       : 'This score is calculated from your saved income, expenses, surplus, and emergency fund progress.';
-
-  // If the profile is only partly filled in, a low score can read as "your
-  // finances are bad" when it may really mean "we don't have enough data
-  // yet" — e.g. 36/100 sitting next to otherwise-strong savings and low
-  // debt. Surfacing completeness resolves that without touching the score
-  // formula or the backend at all.
-  const completeness = computeCompleteness(profile);
-  const completenessBlock = completeness < 100 ? `
-    <div class="health-completeness">
-      <div class="hc-top"><span>Profile completeness</span><span class="num">${completeness}%</span></div>
-      <div class="progress-track"><div class="progress-fill" style="width:${completeness}%; background: var(--indigo);"></div></div>
-      <a href="#/profile" class="hc-cta">Complete your financial profile to unlock your full score →</a>
-    </div>` : '';
-
   el.innerHTML = `
     <h2 class="section-title">Financial Health</h2>
     <div class="health-top mt-16">
@@ -684,7 +668,6 @@ function renderHealth(user, profile){
       </div>
       <p class="health-desc">${healthCopy}</p>
     </div>
-    ${completenessBlock}
     <div class="health-metrics">
       <div class="health-metric"><span class="m-label">Savings Rate</span><span class="m-value">${Math.round(profile.savingsRate*100)}%</span></div>
       <div class="health-metric"><span class="m-label">Monthly Surplus</span><span class="m-value">${Fmt.currency(surplus)}</span></div>
@@ -695,20 +678,6 @@ function renderHealth(user, profile){
 }
 
 function cap(s){ return s.charAt(0) + s.slice(1).toLowerCase(); }
-
-// Presentation-only helper for the health card (see renderHealth): estimates
-// how much of the financial profile has actually been filled in, using only
-// fields already returned by GET /api/profile. Does not affect the score
-// itself or any backend calculation — it only explains the score.
-function computeCompleteness(profile){
-  const checks = [
-    Number(profile.monthlyIncome) > 0,
-    Number(profile.monthlyExpenses) > 0,
-    Boolean(profile.updatedAt),
-    Number(profile.emergencyFundTarget) > 0,
-  ];
-  return Math.round(checks.filter(Boolean).length / checks.length * 100);
-}
 
 function renderGoal(goal){
   const el = document.getElementById('goal-card');
@@ -813,25 +782,19 @@ function emptyState(title, body){
     });
   });
 
-  const MOBILE_STEP_LABELS = { 1: 'Product details', 2: 'Personal context', 3: 'Decision' };
+  function revealPanel(el){
+    if (!el) return;
+    el.style.display = 'block';
+    el.classList.remove('page-enter');
+    void el.offsetWidth; // force reflow so the animation retriggers
+    el.classList.add('page-enter');
+  }
 
   function setProgress(step){
     progress.querySelectorAll('.sp-item').forEach(item => {
       const n = Number(item.dataset.step);
       item.classList.toggle('active', n === step);
       item.classList.toggle('done', n < step);
-    });
-
-    // Compact mobile indicator — same step state, presented as "Step X of 3"
-    // plus a segmented bar instead of three full-width labels.
-    const spmNum = document.getElementById('spm-num');
-    const spmLabel = document.getElementById('spm-label');
-    if (spmNum) spmNum.textContent = step;
-    if (spmLabel) spmLabel.textContent = MOBILE_STEP_LABELS[step] || '';
-    document.querySelectorAll('#step-progress-mobile .spm-dot').forEach(dot => {
-      const n = Number(dot.dataset.step);
-      dot.classList.toggle('active', n === step);
-      dot.classList.toggle('done', n < step);
     });
   }
 
@@ -859,7 +822,7 @@ function emptyState(title, body){
 
     renderRecap(currentProfile);
     step1.style.display = 'none';
-    step2.style.display = 'block';
+    revealPanel(step2);
     setProgress(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -880,14 +843,14 @@ function emptyState(title, body){
 
   document.getElementById('back-to-1').addEventListener('click', () => {
     step2.style.display = 'none';
-    step1.style.display = 'block';
+    revealPanel(step1);
     setProgress(1);
   });
 
   // ---- STEP 2 -> LOADING -> RESULTS ----
   document.getElementById('analyze-btn').addEventListener('click', async () => {
     step2.style.display = 'none';
-    stepLoading.style.display = 'block';
+    revealPanel(stepLoading);
     setProgress(3);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -904,7 +867,7 @@ function emptyState(title, body){
     const narrative = buildNarrative(currentPurchase, currentProfile, currentGoal, analysisRaw);
 
     stepLoading.style.display = 'none';
-    stepResults.style.display = 'block';
+    revealPanel(stepResults);
     renderResults(currentPurchase, currentProfile, currentGoal, analysisRaw, narrative);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -1034,7 +997,7 @@ function emptyState(title, body){
 
       <div class="card mt-24 fade-up ai-response-card">
         <div class="ai-response-head">
-          <span class="badge-ai">AI Take</span>
+          <span class="badge-ai">🤖 AI take</span>
         </div>
         <p class="ai-response-text">${(analysis.aiExplanation && analysis.aiExplanation.trim()) ? analysis.aiExplanation : narrative.supportText}</p>
       </div>
@@ -1151,7 +1114,7 @@ function emptyState(title, body){
         </div>
         <div class="flex mt-24" style="gap:12px; flex-wrap:wrap;">
           <button class="btn btn-primary" id="save-plan-btn">Save Purchase Plan</button>
-          <button class="btn btn-secondary" id="analyze-another-btn" onclick="window.location.reload()">Analyze Another Purchase</button>
+          <button class="btn btn-secondary" onclick="window.location.reload()">Analyze Another Purchase</button>
         </div>
       </div>
     `;
@@ -1369,6 +1332,15 @@ function navigate(){
     if (el) el.style.display = (r === target) ? '' : 'none';
   });
 
+  // Play a quick page-enter transition on the freshly-shown view so
+  // switching routes doesn't feel like an instant, jarring snap.
+  const shown = document.getElementById('view-' + target);
+  if (shown) {
+    shown.classList.remove('page-enter');
+    void shown.offsetWidth; // force reflow so the animation retriggers
+    shown.classList.add('page-enter');
+  }
+
   SpendWiseRouter.currentRoute = target;
   // FIX (issue 3): initShell() now self-guards on auth state (see shell.js),
   // so it's safe — and necessary — to call it on every route, including
@@ -1460,14 +1432,7 @@ document.addEventListener('DOMContentLoaded', () => {
     status.textContent = 'Creating account...';
     try {
       currentUserCache = await SpendWiseAPI.register(document.getElementById('register-email').value, document.getElementById('register-password').value);
-      // New registrations land on the Dashboard (not the Profile page
-      // directly) so the guided tour below has a natural starting point
-      // and can walk the person to Financial Profile themselves, via the
-      // real menu/nav link — the same way any returning user would get
-      // there. This is a front-end routing choice only; the register()
-      // call and its payload/response above are untouched.
-      if (window.WorthwiseTour) window.WorthwiseTour.start();
-      window.location.hash = '#/dashboard';
+      window.location.hash = '#/profile';
       window.location.reload();
     } catch (err) {
       status.textContent = err.message || 'Registration failed';
@@ -1638,256 +1603,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 // goals inline + profile inline + landing inline appended above
-
-/* ============================================================
-   WorthwiseTour — first-run guided walkthrough
-   ------------------------------------------------------------
-   An animated hand + tooltip that points at the next thing to
-   tap, so a brand-new user learns the app by actually using it
-   once, guided. It never simulates a click or fakes a result —
-   every step only advances when the person makes the real click
-   or real form submission that step calls out (the same DOM
-   elements/handlers the app already has), so this can never get
-   out of sync with what actually happened, and it never touches
-   any API call, payload, or auth logic.
-
-   Flow taught: Get Started (landing) -> open menu -> Financial
-   Profile -> fill details -> Save -> open menu -> Analyze a
-   Purchase -> fill product details -> Continue -> Analyze
-   Purchase -> (let the existing loading sequence play out) ->
-   read the result calmly -> Analyze Another Purchase.
-
-   Progress is kept in localStorage (worthwise_tour_step) since a
-   full page reload already happens right after login/register.
-   Dismissible any time via "Skip tour" in the tooltip.
-   ============================================================ */
-(function(){
-  const LS_STEP = 'worthwise_tour_step';
-  const LS_DONE = 'worthwise_tour_done';
-  const LS_SKIP = 'worthwise_tour_skipped';
-
-  function isMobile(){ return window.matchMedia('(max-width: 900px)').matches; }
-  function tourDismissed(){ return localStorage.getItem(LS_DONE) === '1' || localStorage.getItem(LS_SKIP) === '1'; }
-  function getStep(){ return localStorage.getItem(LS_STEP) || ''; }
-  function setStep(id){ localStorage.setItem(LS_STEP, id); render(); }
-  function finishTour(){ localStorage.setItem(LS_DONE, '1'); localStorage.removeItem(LS_STEP); clearUI(); }
-  function skipTour(){ localStorage.setItem(LS_SKIP, '1'); localStorage.removeItem(LS_STEP); clearUI(); }
-
-  // Called from the register-success handler (see auth block above) to
-  // kick the whole thing off right after a brand-new account is created.
-  window.WorthwiseTour = {
-    start(){ if (!tourDismissed()) localStorage.setItem(LS_STEP, 'profile-nav'); },
-  };
-
-  let layer = null;
-  let pollTimer = null;
-
-  function ensureLayer(){
-    layer = document.getElementById('tour-layer');
-    if (!layer) {
-      layer = document.createElement('div');
-      layer.id = 'tour-layer';
-      document.body.appendChild(layer);
-    }
-    return layer;
-  }
-
-  function clearUI(){
-    if (layer) layer.innerHTML = '';
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  }
-
-  // Waits for a selector to exist AND actually be laid out (not sitting
-  // inside a display:none page/section) before pointing at it — dashboard,
-  // profile, and analyze content all render or switch visibility async.
-  function waitFor(selector, cb, tries = 40){
-    const el = document.querySelector(selector);
-    const visible = el && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
-    if (visible) { cb(el); return; }
-    if (tries <= 0) return;
-    setTimeout(() => waitFor(selector, cb, tries - 1), 150);
-  }
-
-  function renderTooltip(targetRect, title, message, opts = {}){
-    const l = ensureLayer();
-    l.innerHTML = '';
-
-    const highlight = document.createElement('div');
-    highlight.className = 'tour-highlight';
-    highlight.style.top = (targetRect.top - 8) + 'px';
-    highlight.style.left = (targetRect.left - 8) + 'px';
-    highlight.style.width = (targetRect.width + 16) + 'px';
-    highlight.style.height = (targetRect.height + 16) + 'px';
-    l.appendChild(highlight);
-
-    const hand = document.createElement('div');
-    hand.className = 'tour-hand';
-    hand.innerHTML = `<svg viewBox="0 0 100 100" width="42" height="42" fill="none">
-      <path d="M30 10 C30 10, 70 10, 70 30 C70 45, 65 55, 55 60 C45 65, 30 50, 30 30 Z" fill="#f1c27d"/>
-      <path d="M32 25 C20 32, 18 45, 26 52 C32 55, 36 45, 36 35 Z" fill="#e0b06c"/>
-      <rect x="36" y="42" width="10" height="38" rx="5" fill="#f1c27d" transform="rotate(8 36 42)"/>
-      <rect x="47" y="42" width="10" height="42" rx="5" fill="#f1c27d" transform="rotate(3 47 42)"/>
-      <rect x="58" y="40" width="9" height="39" rx="4.5" fill="#e0b06c" transform="rotate(-3 58 40)"/>
-    </svg>`;
-    hand.style.top = (targetRect.top + targetRect.height / 2 - 14) + 'px';
-    hand.style.left = (targetRect.left + targetRect.width / 2 - 10) + 'px';
-    l.appendChild(hand);
-
-    const tip = document.createElement('div');
-    tip.className = 'tour-tooltip';
-    const tipLeft = Math.max(12, Math.min(targetRect.left, window.innerWidth - 276));
-    const spaceBelow = window.innerHeight - targetRect.bottom;
-    if (spaceBelow < 140) {
-      tip.style.top = Math.max(12, targetRect.top - 128) + 'px';
-    } else {
-      tip.style.top = (targetRect.bottom + 14) + 'px';
-    }
-    tip.style.left = tipLeft + 'px';
-    tip.innerHTML = `
-      <div class="tt-title">${title}</div>
-      <div>${message}</div>
-      <div class="tt-actions">
-        <span class="tt-skip">Skip tour</span>
-        ${opts.nextLabel ? `<span class="tt-next">${opts.nextLabel}</span>` : ''}
-      </div>`;
-    l.appendChild(tip);
-
-    tip.querySelector('.tt-skip').addEventListener('click', skipTour);
-    if (opts.onNext) tip.querySelector('.tt-next')?.addEventListener('click', opts.onNext);
-  }
-
-  // Shared helper for the two "open the menu, then tap X" steps. On
-  // mobile it points at the hamburger first and waits for the real
-  // drawer-open (the app's own toggle handler), then re-points inside
-  // it. On desktop the sidebar is already visible, so it skips straight
-  // to the nav link.
-  function pointAtNav(navSelector, menuMessage, navMessage, onNavClicked){
-    if (isMobile()) {
-      const sidebar = document.getElementById('sidebar');
-      if (!sidebar || !sidebar.classList.contains('open')) {
-        waitFor('.drawer-toggle', (toggle) => {
-          renderTooltip(toggle.getBoundingClientRect(), 'Tap here', menuMessage);
-          pollTimer = setInterval(() => {
-            if (sidebar && sidebar.classList.contains('open')) {
-              clearInterval(pollTimer); pollTimer = null;
-              pointAtNav(navSelector, menuMessage, navMessage, onNavClicked);
-            }
-          }, 150);
-        });
-        return;
-      }
-    }
-    waitFor(navSelector, (navEl) => {
-      renderTooltip(navEl.getBoundingClientRect(), 'Tap here', navMessage);
-      const handler = () => { navEl.removeEventListener('click', handler); onNavClicked(); };
-      navEl.addEventListener('click', handler);
-    });
-  }
-
-  function render(){
-    if (tourDismissed()) { clearUI(); return; }
-    const step = getStep();
-    clearUI();
-    if (!step) return;
-    if (!window.SpendWiseAPI || !SpendWiseAPI.isAuthenticated()) return;
-
-    if (step === 'profile-nav') {
-      pointAtNav(
-        'a.nav-link[href="#/profile"]:not([data-scroll-target])',
-        'Tap the menu icon to open navigation.',
-        "Let's set up your financial profile first — tap here.",
-        () => setStep('profile-fill')
-      );
-      return;
-    }
-
-    if (step === 'profile-fill') {
-      waitFor('#in-income', (el) => {
-        renderTooltip(el.getBoundingClientRect(), 'Your details',
-          'Add your income, expenses and savings here.',
-          { nextLabel: 'Got it →', onNext: () => setStep('profile-save') });
-      });
-      return;
-    }
-
-    if (step === 'profile-save') {
-      waitFor('#save-btn', (el) => {
-        renderTooltip(el.getBoundingClientRect(), 'Save it', "Tap Save Changes when you're done.");
-        const handler = () => { el.removeEventListener('click', handler); setStep('analyze-nav'); };
-        el.addEventListener('click', handler);
-      });
-      return;
-    }
-
-    if (step === 'analyze-nav') {
-      pointAtNav(
-        'a.nav-link[href="#/analyze"]',
-        'Tap the menu icon again.',
-        "Now let's analyze a purchase — tap here.",
-        () => setStep('purchase-form')
-      );
-      return;
-    }
-
-    if (step === 'purchase-form') {
-      waitFor('#purchase-form button[type="submit"]', (el) => {
-        renderTooltip(el.getBoundingClientRect(), 'Product details',
-          'Fill in the product details above, then tap Continue.');
-        const handler = () => { el.removeEventListener('click', handler); setStep('analyze-click'); };
-        el.addEventListener('click', handler);
-      });
-      return;
-    }
-
-    if (step === 'analyze-click') {
-      waitFor('#analyze-btn', (el) => {
-        renderTooltip(el.getBoundingClientRect(), 'Almost there', 'Tap Analyze Purchase to see your decision.');
-        const handler = () => { el.removeEventListener('click', handler); setStep('results-wait'); };
-        el.addEventListener('click', handler);
-      });
-      return;
-    }
-
-    if (step === 'results-wait') {
-      // No overlay while the loading sequence plays and the result first
-      // appears — let the person read their verdict calmly. The tour
-      // speaks again a few seconds after results are actually on screen.
-      waitFor('#step-results', () => {
-        setTimeout(() => setStep('analyze-another'), 4500);
-      });
-      return;
-    }
-
-    if (step === 'analyze-another') {
-      waitFor('#analyze-another-btn', (el) => {
-        renderTooltip(el.getBoundingClientRect(), 'One more thing',
-          'Tap here anytime you want to analyze another purchase.');
-        const handler = () => { el.removeEventListener('click', handler); finishTour(); };
-        el.addEventListener('click', handler);
-      });
-      return;
-    }
-  }
-
-  // Landing-page step ("Get Started") — independent of the stored step
-  // above, since it's shown pre-registration to anyone who hasn't
-  // started or dismissed the tour yet.
-  function renderLandingStep(){
-    if (tourDismissed()) return;
-    if (window.SpendWiseAPI && SpendWiseAPI.isAuthenticated()) return;
-    const h = window.location.hash || '';
-    if (h !== '' && h !== '#/landing') return;
-    waitFor('.hero-ctas .btn-get-started', (el) => {
-      renderTooltip(el.getBoundingClientRect(), 'New here?', 'Tap "Get Started" to create your account.');
-    });
-  }
-
-  function renderAny(){
-    if (window.SpendWiseAPI && SpendWiseAPI.isAuthenticated()) render();
-    else renderLandingStep();
-  }
-
-  window.addEventListener('hashchange', () => setTimeout(renderAny, 60));
-  window.addEventListener('resize', () => setTimeout(renderAny, 60));
-  document.addEventListener('DOMContentLoaded', () => setTimeout(renderAny, 200));
-})();
