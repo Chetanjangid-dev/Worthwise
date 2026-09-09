@@ -238,29 +238,16 @@
 <div class="page-header" id="flow-header">
         <div class="eyebrow">Analyze a Purchase</div>
         <h1 class="page-title">Before you buy, understand the impact.</h1>
-        <p class="page-sub">Tell us about the purchase. We'll handle the rest.</p>
+        <p class="page-sub">Two quick steps — Worthwise handles the rest.</p>
       </div>
 
-      <!-- step progress (desktop: full labels) -->
-      <div class="step-progress hide-mobile" id="step-progress">
+      <!-- step progress -->
+      <div class="step-progress" id="step-progress">
         <div class="sp-item active" data-step="1"><span class="sp-dot">1</span>Product details</div>
         <div class="sp-line"></div>
         <div class="sp-item" data-step="2"><span class="sp-dot">2</span>Personal context</div>
         <div class="sp-line"></div>
         <div class="sp-item" data-step="3"><span class="sp-dot">3</span>Decision</div>
-      </div>
-
-      <!-- step progress (mobile: compact "Step X of 3" + current label + bar) -->
-      <div class="step-progress-mobile hide-desktop" id="step-progress-mobile">
-        <div class="spm-top">
-          <span class="spm-count">Step <span id="spm-num">1</span> of 3</span>
-        </div>
-        <div class="spm-label" id="spm-label">Product details</div>
-        <div class="spm-track">
-          <div class="spm-dot active" data-step="1"></div>
-          <div class="spm-dot" data-step="2"></div>
-          <div class="spm-dot" data-step="3"></div>
-        </div>
       </div>
 
       <!-- ===================== STEP 1 ===================== -->
@@ -518,6 +505,5 @@
 </div>
 
 <script src="app.js"></script>
-<div id="tour-layer" aria-live="polite"></div>
 </body>
 </html>
