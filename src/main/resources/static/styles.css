@@ -86,10 +86,7 @@ h1,h2,h3,h4{ font-family: var(--font-display); font-weight: 600; margin: 0; lett
 /* ---------------------------------------------------------------- */
 /* Logo                                                              */
 /* ---------------------------------------------------------------- */
-/* FIX: was var(--pine-dark) (#0F3D2E), a near-black green that is
-   effectively invisible against this app's dark surfaces. The wordmark
-   needs to read as ink, with the pine color reserved for the mark/accent. */
-.logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; color: var(--ink); }
+.logo{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; color: var(--pine-dark); }
 .logo svg{ flex-shrink:0; }
 .logo-word{ font-family: var(--font-display); font-weight:600; font-size:19px; letter-spacing:-0.01em; }
 
@@ -303,6 +300,61 @@ textarea.input{ resize: vertical; min-height: 84px; }
 .fade-up{ animation: fadeUp .5s var(--ease) both; }
 @keyframes fadeUp{ from{opacity:0; transform: translateY(10px);} to{opacity:1; transform:none;} }
 
+/* ---------------------------------------------------------------- */
+/* Page / route transition (fixes the abrupt "form-filling" jump    */
+/* between pages and between analyze-flow steps)                    */
+/* ---------------------------------------------------------------- */
+.page-enter{ animation: pageEnter .42s var(--ease) both; }
+@keyframes pageEnter{
+  from{ opacity:0; transform: translateY(14px) scale(.995); }
+  to{ opacity:1; transform:none; }
+}
+.step-panel.page-enter{ animation: pageEnter .38s var(--ease) both; }
+@media (prefers-reduced-motion: reduce){
+  .page-enter{ animation: none; }
+}
+
+/* Sidebar nav: livelier active/hover feedback */
+.nav-link{ position:relative; }
+.nav-link::before{
+  content:''; position:absolute; left:-2px; top:50%; transform:translateY(-50%) scaleY(0);
+  width:3px; height:60%; border-radius:3px; background: var(--pine);
+  transition: transform .2s var(--ease); transform-origin:center;
+}
+.nav-link.active::before{ transform: translateY(-50%) scaleY(1); }
+.nav-link:hover{ transform: translateX(2px); }
+.nav-link.active{ box-shadow: inset 0 0 0 1px rgba(34,192,138,.18); }
+
+/* Cards: subtle universal lift, even where .card-hover isn't set */
+.card{ will-change: transform; }
+.card:hover{ border-color: var(--border-strong); }
+
+/* Health mini pulse — sidebar feels alive rather than static */
+.health-mini .dot{ position:relative; }
+.health-mini .dot::after{
+  content:''; position:absolute; inset:-4px; border-radius:50%;
+  border: 1.5px solid var(--pine); opacity:.6;
+  animation: dotPulse 2.2s var(--ease) infinite;
+}
+@keyframes dotPulse{
+  0%{ transform:scale(.6); opacity:.6; }
+  70%{ transform:scale(1.8); opacity:0; }
+  100%{ opacity:0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .health-mini .dot::after{ animation:none; }
+}
+
+/* Step progress: animated fill line instead of a static dash */
+.sp-line{ position:relative; overflow:hidden; }
+.sp-line::after{
+  content:''; position:absolute; inset:0; background: var(--pine);
+  transform: scaleX(0); transform-origin:left; transition: transform .5s var(--ease);
+}
+.sp-item.done + .sp-line::after{ transform: scaleX(1); }
+.sp-dot{ transition: background .3s var(--ease), color .3s var(--ease), box-shadow .3s var(--ease); }
+.sp-item.active .sp-dot{ box-shadow: 0 0 0 4px var(--pine-soft); }
+
 .empty-state{ text-align:center; padding: 50px 20px; color: var(--ink-muted); }
 .empty-state svg{ margin-bottom: 14px; opacity: .55; }
 .empty-state h3{ font-size:16px; color: var(--ink); margin-bottom:6px; }
@@ -333,15 +385,6 @@ textarea.input{ resize: vertical; min-height: 84px; }
 .health-score-label .n{ font-family: var(--font-display); font-size:34px; font-weight:600; }
 .health-score-label .l{ font-size: 12.5px; color: var(--buy); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
 .health-desc{ flex:1; min-width:220px; color: var(--ink-muted); font-size:14.5px; line-height:1.6; }
-
-/* ---- financial health: profile completeness ----
-   Shown whenever the profile isn't fully filled in, so a low score reads
-   as "add more data" rather than "your finances are bad". */
-.health-completeness{ margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
-.health-completeness .hc-top{ display:flex; justify-content:space-between; font-size:13px; font-weight:600; color: var(--ink-muted); margin-bottom:8px; }
-.health-completeness .hc-cta{ display:inline-block; margin-top:10px; font-size:13.5px; font-weight:600; color: var(--indigo); }
-.health-completeness .hc-cta:hover{ text-decoration: underline; }
-
 .health-metrics{ margin-top: 20px; display:grid; grid-template-columns: 1fr 1fr; gap: 14px 26px; }
 .health-metric{ display:flex; align-items:center; justify-content:space-between; font-size:13.5px; padding: 4px 0; border-bottom:1px dashed var(--border); }
 .health-metric .m-label{ color: var(--ink-muted); }
@@ -403,19 +446,6 @@ textarea.input{ resize: vertical; min-height: 84px; }
 .sp-item.active .sp-dot{ background: var(--pine); color:#fff; border-color: var(--pine); }
 .sp-item.done .sp-dot{ background: var(--pine-soft); color: var(--pine-dark); border-color: var(--pine-soft); }
 .sp-line{ width:36px; height:1px; background: var(--border); }
-
-/* ---- step progress: compact mobile variant ----
-   Three full-width labels ("Product details" / "Personal context" /
-   "Decision") crowd or wrap on narrow screens. Below 900px we swap to
-   a "Step X of 3" count, the current step's label only, and a slim
-   segmented bar — same underlying step state, shown via setProgress(). */
-.step-progress-mobile{ margin-bottom: 24px; }
-.spm-top{ margin-bottom: 6px; }
-.spm-count{ font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
-.spm-label{ font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 12px; }
-.spm-track{ display:flex; align-items:center; gap:6px; }
-.spm-dot{ flex:1; height:4px; border-radius:2px; background: var(--surface-sunk); transition: background .25s var(--ease); }
-.spm-dot.active, .spm-dot.done{ background: var(--pine); }
 
 /* ---- step 2 recap ---- */
 .profile-recap{ margin-top: 14px; }
@@ -1031,62 +1061,4 @@ input[type="range"]::-moz-range-thumb{
   .wallet-anim-module{ height: 190px; }
   .wallet-anim-module .wallet-container{ left: 20px; }
   .wallet-anim-module .human-arm{ left: 55px; } /* mirrors the wallet's 40px shift above */
-}
-
-/* ==========================================================================
-   Guided Tour — first-run walkthrough overlay
-   A calm, minimal hand + tooltip. No dark backdrop dimming the whole
-   screen (the highlight ring is enough) so the real UI stays fully
-   legible and clickable underneath — the person completes every step
-   with a genuine click, this only points.
-   ========================================================================== */
-#tour-layer{ position: fixed; inset: 0; pointer-events: none; z-index: 2000; }
-
-.tour-highlight{
-  position: fixed;
-  border-radius: 12px;
-  box-shadow: 0 0 0 3px var(--pine), 0 0 0 6px var(--pine-soft), 0 8px 28px rgba(0,0,0,0.4);
-  pointer-events: none;
-  transition: top .4s var(--ease), left .4s var(--ease), width .4s var(--ease), height .4s var(--ease);
-}
-
-.tour-hand{
-  position: fixed;
-  width: 42px; height: 42px;
-  pointer-events: none;
-  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
-  transition: top .4s var(--ease), left .4s var(--ease);
-  animation: tourTap 1.3s ease-in-out infinite;
-  transform-origin: 65% 15%;
-}
-@keyframes tourTap{
-  0%, 100% { transform: translate(0,0) rotate(0deg); }
-  50%      { transform: translate(-3px, 3px) rotate(-6deg); }
-}
-
-.tour-tooltip{
-  position: fixed;
-  max-width: 250px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-lg);
-  pointer-events: auto;
-  font-size: 13.5px; line-height: 1.5; color: var(--ink);
-  transition: top .4s var(--ease), left .4s var(--ease);
-}
-.tour-tooltip .tt-title{
-  font-weight: 700; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
-  color: var(--pine); margin-bottom: 6px;
-}
-.tour-tooltip .tt-actions{ display:flex; align-items:center; justify-content:space-between; margin-top: 12px; }
-.tour-tooltip .tt-skip{ font-size: 12px; color: var(--ink-faint); cursor: pointer; }
-.tour-tooltip .tt-skip:hover{ color: var(--ink-muted); }
-.tour-tooltip .tt-next{ font-size: 12.5px; font-weight: 700; color: var(--indigo); cursor: pointer; }
-.tour-tooltip .tt-next:hover{ text-decoration: underline; }
-
-@media (max-width: 560px){
-  .tour-tooltip{ max-width: 210px; font-size: 13px; padding: 12px 14px; }
-  .tour-hand{ width: 36px; height: 36px; }
 }
