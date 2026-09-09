@@ -651,6 +651,7 @@ function renderHealth(user, profile){
   const emergencyRatio = emergencyTarget > 0 ? Math.min(savings / emergencyTarget, 1) : 0;
   const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
   const label = score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'Set up profile';
+  const tier = score >= 85 ? 'Financially Strong' : score >= 65 ? 'On Track' : score >= 40 ? 'Building Momentum' : 'Just Getting Started';
   const healthCopy = income <= 0
     ? 'Add your real income, expenses, savings, and goals. SpendWise will update this score from your saved database profile.'
     : surplus < 0
@@ -664,6 +665,7 @@ function renderHealth(user, profile){
         <div class="health-score-label">
           <div class="n">${score}<span style="font-size:16px;color:var(--ink-faint);">/100</span></div>
           <div class="l">${label}</div>
+          <div class="health-tier">${iconSvg('<path d="m12 2 2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2Z"/>', 11)} ${tier}</div>
         </div>
       </div>
       <p class="health-desc">${healthCopy}</p>
