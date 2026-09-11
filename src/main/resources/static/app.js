@@ -554,6 +554,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Scroll-reveal for the landing page's .reveal elements (value list,
+// flow timeline, closing CTA). Adds .revealed as each one enters the
+// viewport; falls back to revealing everything immediately if
+// IntersectionObserver isn't available.
+document.addEventListener('DOMContentLoaded', () => {
+  const revealEls = document.querySelectorAll('#view-landing .reveal');
+  if (!revealEls.length) return;
+  if (!('IntersectionObserver' in window)) {
+    revealEls.forEach(el => el.classList.add('revealed'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+  revealEls.forEach(el => io.observe(el));
+});
+
 async function loadDashboard(){
   if (!SpendWiseAPI.isAuthenticated()) return;
   if (!document.getElementById('greeting')) return; // not on the dashboard page
