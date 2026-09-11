@@ -651,7 +651,6 @@ function renderHealth(user, profile){
   const emergencyRatio = emergencyTarget > 0 ? Math.min(savings / emergencyTarget, 1) : 0;
   const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
   const label = score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'Set up profile';
-  const tier = score >= 85 ? 'Financially Strong' : score >= 65 ? 'On Track' : score >= 40 ? 'Building Momentum' : 'Just Getting Started';
   const healthCopy = income <= 0
     ? 'Add your real income, expenses, savings, and goals. SpendWise will update this score from your saved database profile.'
     : surplus < 0
@@ -665,7 +664,6 @@ function renderHealth(user, profile){
         <div class="health-score-label">
           <div class="n">${score}<span style="font-size:16px;color:var(--ink-faint);">/100</span></div>
           <div class="l">${label}</div>
-          <div class="health-tier">${iconSvg('<path d="m12 2 2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2Z"/>', 11)} ${tier}</div>
         </div>
       </div>
       <p class="health-desc">${healthCopy}</p>
@@ -784,14 +782,6 @@ function emptyState(title, body){
     });
   });
 
-  function revealPanel(el){
-    if (!el) return;
-    el.style.display = 'block';
-    el.classList.remove('page-enter');
-    void el.offsetWidth; // force reflow so the animation retriggers
-    el.classList.add('page-enter');
-  }
-
   function setProgress(step){
     progress.querySelectorAll('.sp-item').forEach(item => {
       const n = Number(item.dataset.step);
@@ -824,7 +814,7 @@ function emptyState(title, body){
 
     renderRecap(currentProfile);
     step1.style.display = 'none';
-    revealPanel(step2);
+    step2.style.display = 'block';
     setProgress(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -845,14 +835,14 @@ function emptyState(title, body){
 
   document.getElementById('back-to-1').addEventListener('click', () => {
     step2.style.display = 'none';
-    revealPanel(step1);
+    step1.style.display = 'block';
     setProgress(1);
   });
 
   // ---- STEP 2 -> LOADING -> RESULTS ----
   document.getElementById('analyze-btn').addEventListener('click', async () => {
     step2.style.display = 'none';
-    revealPanel(stepLoading);
+    stepLoading.style.display = 'block';
     setProgress(3);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -869,7 +859,7 @@ function emptyState(title, body){
     const narrative = buildNarrative(currentPurchase, currentProfile, currentGoal, analysisRaw);
 
     stepLoading.style.display = 'none';
-    revealPanel(stepResults);
+    stepResults.style.display = 'block';
     renderResults(currentPurchase, currentProfile, currentGoal, analysisRaw, narrative);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -1334,15 +1324,6 @@ function navigate(){
     if (el) el.style.display = (r === target) ? '' : 'none';
   });
 
-  // Play a quick page-enter transition on the freshly-shown view so
-  // switching routes doesn't feel like an instant, jarring snap.
-  const shown = document.getElementById('view-' + target);
-  if (shown) {
-    shown.classList.remove('page-enter');
-    void shown.offsetWidth; // force reflow so the animation retriggers
-    shown.classList.add('page-enter');
-  }
-
   SpendWiseRouter.currentRoute = target;
   // FIX (issue 3): initShell() now self-guards on auth state (see shell.js),
   // so it's safe — and necessary — to call it on every route, including
@@ -1605,3 +1586,213 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 // goals inline + profile inline + landing inline appended above
+
+/* ======================================================
+   GAME HUD ENHANCEMENT LAYER (merged in below)
+   ====================================================== */
+/* ============================================================
+   WORTHWISE — GAME HUD ENHANCEMENT LAYER (JS)
+   Load AFTER app.js. This file never touches existing functions,
+   IDs, event handlers, or API calls. It only observes the DOM
+   app.js already renders and layers animation/feedback on top.
+   Delete this <script> tag any time to fully revert.
+   ============================================================ */
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- 1. Fix + power the landing page scroll-reveal ----------
+     styles.css already defines .reveal / .reveal.revealed; nothing in
+     app.js was wiring it up, so those sections stayed invisible. */
+  function initRevealObserver(){
+    var targets = document.querySelectorAll('.reveal');
+    if (!targets.length) return;
+    if (reduceMotion || !('IntersectionObserver' in window)){
+      targets.forEach(function(el){ el.classList.add('revealed'); });
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting){
+          entry.target.classList.add('revealed');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    targets.forEach(function(el){ io.observe(el); });
+  }
+
+  /* ---------- 2. Count-up animation for currency/number values ---------- */
+  function parseNumeric(text){
+    var cleaned = (text || '').replace(/[^0-9.\-]/g, '');
+    var n = parseFloat(cleaned);
+    return isNaN(n) ? null : n;
+  }
+  function formatLike(original, n){
+    // Preserve currency symbol / suffix formatting from the original string.
+    var hasRupee = /₹/.test(original);
+    var rounded = Math.round(n);
+    var withCommas = rounded.toLocaleString('en-IN');
+    return original.replace(/[0-9][0-9,]*\.?[0-9]*/, withCommas).replace(/^(?!.*₹)/, hasRupee ? '' : '');
+  }
+  function animateValue(el){
+    if (el.dataset.hudAnimated === '1') return;
+    var target = parseNumeric(el.textContent);
+    if (target === null){ return; }
+    el.dataset.hudAnimated = '1';
+    if (reduceMotion){ return; }
+    var original = el.textContent;
+    var duration = 700;
+    var start = null;
+    el.parentElement && el.parentElement.classList && el.parentElement.classList.add('hud-counting');
+    function step(ts){
+      if (!start) start = ts;
+      var p = Math.min(1, (ts - start) / duration);
+      var eased = 1 - Math.pow(1 - p, 3);
+      var current = target * eased;
+      el.textContent = formatLike(original, current) || original;
+      if (p < 1){
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = original;
+        setTimeout(function(){
+          el.parentElement && el.parentElement.classList && el.parentElement.classList.remove('hud-counting');
+        }, 250);
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* ---------- 3. Progress bars animate from 0 → target on insert ---------- */
+  function animateProgressFill(el){
+    if (el.dataset.hudAnimated === '1') return;
+    el.dataset.hudAnimated = '1';
+    var target = el.style.width || getComputedStyle(el).width;
+    if (reduceMotion) return;
+    el.style.width = '0%';
+    // force reflow so the transition (already defined in styles.css) plays
+    void el.offsetWidth;
+    requestAnimationFrame(function(){
+      el.style.width = target;
+    });
+
+    // Goal / mission completion celebration
+    var pct = parseNumeric(target);
+    if (pct !== null && pct >= 100){
+      var card = el.closest('.goal-card');
+      if (card){
+        setTimeout(function(){ celebrateGoal(card); }, 650);
+      }
+    }
+  }
+
+  function celebrateGoal(card){
+    if (card.classList.contains('hud-complete')) return;
+    card.classList.add('hud-complete');
+    if (reduceMotion) return;
+    var field = document.createElement('div');
+    field.className = 'hud-particle-field';
+    var colors = ['#F0AC44', '#22C08A', '#8A93FF'];
+    for (var i = 0; i < 14; i++){
+      var p = document.createElement('span');
+      p.className = 'hud-particle';
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 30 + Math.random() * 50;
+      p.style.setProperty('--hx', (Math.cos(angle) * dist).toFixed(1) + 'px');
+      p.style.setProperty('--hy', (Math.sin(angle) * dist - 20).toFixed(1) + 'px');
+      p.style.left = (45 + Math.random() * 10) + '%';
+      p.style.top = '40%';
+      p.style.background = colors[i % colors.length];
+      p.style.animationDelay = (Math.random() * 120) + 'ms';
+      field.appendChild(p);
+    }
+    card.appendChild(field);
+    setTimeout(function(){ field.remove(); }, 1400);
+  }
+
+  /* ---------- 4. Watch for app.js re-rendering dashboard/goals content ---------- */
+  function scanNode(root){
+    if (!root || root.nodeType !== 1) return;
+    var values = root.matches && root.matches('.snapshot-card .value')
+      ? [root]
+      : root.querySelectorAll ? root.querySelectorAll('.snapshot-card .value') : [];
+    values.forEach && values.forEach(animateValue);
+    if (!values.forEach && values.length){ Array.prototype.forEach.call(values, animateValue); }
+
+    var fills = root.matches && root.matches('.progress-fill')
+      ? [root]
+      : root.querySelectorAll ? root.querySelectorAll('.progress-fill') : [];
+    Array.prototype.forEach.call(fills, animateProgressFill);
+  }
+
+  function initContentObserver(){
+    var containers = ['snapshot-grid', 'goal-card', 'goals-grid', 'planned-purchases', 'recent-decisions']
+      .map(function(id){ return document.getElementById(id); })
+      .filter(Boolean);
+    if (!containers.length || !('MutationObserver' in window)) return;
+    var mo = new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        m.addedNodes && m.addedNodes.forEach(function(node){ scanNode(node); });
+      });
+    });
+    containers.forEach(function(el){
+      mo.observe(el, { childList: true, subtree: true });
+      scanNode(el); // catch content already present at load
+    });
+  }
+
+  /* ---------- 5. Button ripple on press (visual only, never blocks click) ---------- */
+  function initRipples(){
+    document.addEventListener('pointerdown', function(e){
+      var btn = e.target.closest && e.target.closest('.btn');
+      if (!btn || reduceMotion) return;
+      var rect = btn.getBoundingClientRect();
+      var size = Math.max(rect.width, rect.height) * 1.2;
+      var ripple = document.createElement('span');
+      ripple.className = 'hud-ripple';
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+      btn.appendChild(ripple);
+      setTimeout(function(){ ripple.remove(); }, 600);
+    }, { passive: true });
+  }
+
+  /* ---------- 6. Subtle magnetic tilt on stat cards (desktop, fine pointer only) ---------- */
+  function initTilt(){
+    if (reduceMotion) return;
+    if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return;
+    document.addEventListener('mousemove', function(e){
+      var card = e.target.closest && e.target.closest('.snapshot-card');
+      if (!card) return;
+      var r = card.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width - 0.5;
+      var y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = 'perspective(600px) rotateX(' + (-y * 4).toFixed(2) + 'deg) rotateY(' + (x * 4).toFixed(2) + 'deg) translateY(-2px)';
+    }, { passive: true });
+    document.addEventListener('mouseout', function(e){
+      var card = e.target.closest && e.target.closest('.snapshot-card');
+      if (card) card.style.transform = '';
+    }, { passive: true });
+  }
+
+  function boot(){
+    initRevealObserver();
+    initContentObserver();
+    initRipples();
+    initTilt();
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+  // Re-run the reveal observer after route changes, in case app.js
+  // swaps views via hash routing and re-shows landing sections.
+  window.addEventListener('hashchange', function(){
+    setTimeout(initRevealObserver, 50);
+  });
+})();
