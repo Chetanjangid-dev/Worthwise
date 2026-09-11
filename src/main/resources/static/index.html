@@ -10,7 +10,8 @@
 
 <!-- ===================== LANDING PAGE ===================== -->
 <div id="view-landing">
-<div class="aurora-bg"><div class="aurora-blob a1"></div><div class="aurora-blob a2"></div><div class="aurora-blob a3"></div></div>
+<div class="landing-texture" aria-hidden="true"></div>
+
 <div class="landing-nav">
   <div class="logo">
     <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
@@ -25,106 +26,117 @@
     <a href="javascript:void(0)" data-scroll-target="how">How it works</a>
     <a href="javascript:void(0)" data-scroll-target="value">Why Worthwise</a>
   </div>
-  <a href="#/auth" class="btn btn-primary btn-sm btn-get-started">Get Started</a>
+  <a href="#/auth" class="btn btn-get-started btn-sm nav-cta">Get Started</a>
 </div>
 
-<section class="hero fade-up">
-  <div class="eyebrow">Personal Purchase Decision Engine</div>
-  <h1>Think before <em>you spend.</em></h1>
-  <p class="lead">Make purchases that fit your life — not just your budget. Worthwise weighs every purchase against your income, goals, and future plans before you buy.</p>
-  <div class="hero-ctas">
-    <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
-  </div>
-</section>
+<section class="hero">
+  <div class="hero-copy fade-up">
+    <div class="eyebrow">Personal Purchase Decision Engine</div>
+    <h1>Think before <em>you spend.</em></h1>
+    <p class="lead">Make purchases that fit your life — not just your budget. Worthwise weighs every purchase against your income, goals, and future plans before you buy.</p>
+    <div class="hero-ctas">
+      <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
+      <a href="javascript:void(0)" data-scroll-target="how" class="hero-secondary-link">See how it works <span aria-hidden="true">→</span></a>
+    </div>
 
-<div class="hero-visual fade-up">
-  <div class="hero-frame">
-    <div class="bar"><span class="dot-b"></span><span class="dot-b"></span><span class="dot-b"></span></div>
     <div class="decision-preview">
       <div class="dial-wrap">
         <div id="landing-dial"></div>
         <div class="verdict">WAIT</div>
       </div>
       <div class="meta">
-        <span class="badge-ai badge-ai">AI Explanation</span>
-        <h3 class="mt-8">Your purchase · Your numbers</h3>
-        <p class="muted" style="font-size:14.5px;">Create your profile, add goals, and Worthwise will calculate the real financial impact before suggesting a decision.</p>
+        <span class="live-tag">Live example</span>
+        <p>₹42,000 purchase, checked against a real profile and goals.</p>
       </div>
     </div>
-
-    <!-- ===== Eye-catching wallet/money animation block ===== -->
-    <div class="wallet-anim-module">
-      <div class="wallet-container">
-        <div class="wallet-back"></div>
-        <div class="money-note">
-          <span class="note-text">₹500</span>
-        </div>
-        <div class="wallet-front"></div>
-      </div>
-
-      <div class="human-arm">
-        <div class="sleeve"></div>
-        <div class="cuff"></div>
-        <svg class="hand-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M30 10 C30 10, 70 10, 70 30 C70 45, 65 55, 55 60 C45 65, 30 50, 30 30 Z" fill="#f1c27d"/>
-          <path d="M32 25 C20 32, 18 45, 26 52 C32 55, 36 45, 36 35 Z" fill="#e0b06c"/>
-          <rect x="36" y="42" width="10" height="38" rx="5" fill="#f1c27d" transform="rotate(8 36 42)"/>
-          <rect x="47" y="42" width="10" height="42" rx="5" fill="#f1c27d" transform="rotate(3 47 42)"/>
-          <rect x="58" y="40" width="9" height="39" rx="4.5" fill="#e0b06c" transform="rotate(-3 58 40)"/>
-          <rect x="67" y="36" width="8" height="32" rx="4" fill="#d4a360" transform="rotate(-8 67 36)"/>
-        </svg>
-      </div>
-
-      <div class="alert-popup popup-stop">
-        <h2>Stop! 🛑</h2>
-        <p>It can destroy your savings.</p>
-      </div>
-
-      <div class="alert-popup popup-allow">
-        <h2>Approved! 🎉</h2>
-        <p>Yes, you can take it.</p>
-      </div>
-    </div>
-
   </div>
-</div>
+
+  <div class="hero-visual fade-up">
+    <div class="hero-frame">
+      <!-- ===== Eye-catching wallet/money animation block ===== -->
+      <div class="wallet-anim-module">
+        <div class="wallet-container">
+          <div class="wallet-back"></div>
+          <div class="money-note">
+            <span class="note-text">₹500</span>
+          </div>
+          <div class="wallet-front"></div>
+        </div>
+
+        <div class="human-arm">
+          <div class="sleeve"></div>
+          <div class="cuff"></div>
+          <svg class="hand-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 10 C30 10, 70 10, 70 30 C70 45, 65 55, 55 60 C45 65, 30 50, 30 30 Z" fill="#f1c27d"/>
+            <path d="M32 25 C20 32, 18 45, 26 52 C32 55, 36 45, 36 35 Z" fill="#e0b06c"/>
+            <rect x="36" y="42" width="10" height="38" rx="5" fill="#f1c27d" transform="rotate(8 36 42)"/>
+            <rect x="47" y="42" width="10" height="42" rx="5" fill="#f1c27d" transform="rotate(3 47 42)"/>
+            <rect x="58" y="40" width="9" height="39" rx="4.5" fill="#e0b06c" transform="rotate(-3 58 40)"/>
+            <rect x="67" y="36" width="8" height="32" rx="4" fill="#d4a360" transform="rotate(-8 67 36)"/>
+          </svg>
+        </div>
+
+        <div class="alert-popup popup-stop">
+          <h2>Stop! 🛑</h2>
+          <p>It can destroy your savings.</p>
+        </div>
+
+        <div class="alert-popup popup-allow">
+          <h2>Approved! 🎉</h2>
+          <p>Yes, you can take it.</p>
+        </div>
+      </div>
+
+      <p class="hero-frame-caption">Every purchase gets a verdict — before the money leaves your hand.</p>
+    </div>
+  </div>
+</section>
 
 <section class="value-strip" id="value">
-  <div class="item reveal">
-    <div class="n">Affordability</div>
-    <h3>Beyond your bank balance</h3>
-    <p>Worthwise checks cash flow, savings buffer, and existing commitments — not just whether the money is sitting in your account today.</p>
+  <div class="value-strip-head reveal">
+    <span class="eyebrow">Why Worthwise</span>
+    <h2>Beyond a budget check</h2>
   </div>
-  <div class="item reveal">
-    <div class="n">Goal impact</div>
-    <h3>See what a purchase delays</h3>
-    <p>Every recommendation shows exactly how a purchase shifts your goal timelines — in months, not vague warnings.</p>
-  </div>
-  <div class="item reveal">
-    <div class="n">Timing</div>
-    <h3>Buy now, wait, or skip</h3>
-    <p>A clear, explainable verdict — with a simulator to see how waiting, saving more, or a discount changes the outcome.</p>
+  <div class="value-list">
+    <div class="value-row reveal">
+      <div class="n">01</div>
+      <div class="value-copy">
+        <h3>Affordability, not just balance</h3>
+        <p>Worthwise checks cash flow, savings buffer, and existing commitments — not just whether the money is sitting in your account today.</p>
+      </div>
+    </div>
+    <div class="value-row reveal">
+      <div class="n">02</div>
+      <div class="value-copy">
+        <h3>See what a purchase delays</h3>
+        <p>Every recommendation shows exactly how a purchase shifts your goal timelines — in months, not vague warnings.</p>
+      </div>
+    </div>
+    <div class="value-row reveal">
+      <div class="n">03</div>
+      <div class="value-copy">
+        <h3>Buy now, wait, or skip</h3>
+        <p>A clear, explainable verdict — with a simulator to see how waiting, saving more, or a discount changes the outcome.</p>
+      </div>
+    </div>
   </div>
 </section>
 
 <section class="flow" id="how">
+  <span class="eyebrow flow-eyebrow reveal">How it works</span>
   <h2 class="reveal">A financial decision workspace</h2>
   <p class="sub reveal">Not a chatbot. Not a spreadsheet. A structured way to reason through a purchase.</p>
   <div class="flow-steps">
-    <div class="step reveal"><span class="pill">Can I afford it?</span></div>
-    <span class="arrow">→</span>
-    <div class="step reveal"><span class="pill">What will it change?</span></div>
-    <span class="arrow">→</span>
-    <div class="step reveal"><span class="pill">Impact on my goals?</span></div>
-    <span class="arrow">→</span>
-    <div class="step reveal"><span class="pill">What if I wait?</span></div>
-    <span class="arrow">→</span>
-    <div class="step reveal"><span class="pill">What should I do?</span></div>
+    <div class="step reveal"><span class="step-index">1</span><span class="step-label">Can I afford it?</span></div>
+    <div class="step reveal"><span class="step-index">2</span><span class="step-label">What will it change?</span></div>
+    <div class="step reveal"><span class="step-index">3</span><span class="step-label">Impact on my goals?</span></div>
+    <div class="step reveal"><span class="step-index">4</span><span class="step-label">What if I wait?</span></div>
+    <div class="step reveal"><span class="step-index">5</span><span class="step-label">What should I do?</span></div>
   </div>
 </section>
 
-<section class="cta-band">
-  <div class="cta-inner reveal">
+<section class="cta-band reveal">
+  <div class="cta-inner">
     <h2>Your next purchase deserves five minutes of thought.</h2>
     <p>Set up your financial profile once — Worthwise handles the analysis every time after.</p>
     <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
