@@ -3,518 +3,591 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Worthwise — Think before you spend.</title>
+<title>Worth Wise — Ask before you buy.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<!-- ===================== LANDING PAGE ===================== -->
-<div id="view-landing">
-<div class="landing-texture" aria-hidden="true"></div>
+<!-- Ambient grain / vignette layer -->
+<div class="grain" aria-hidden="true"></div>
 
-<div class="landing-nav">
-  <div class="logo">
-    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-      <rect x="1" y="6" width="24" height="17" rx="4" fill="#22C08A"/>
-      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0F3D2E"/>
-      <circle cx="18.5" cy="14.5" r="3.1" fill="#0A0C0F"/>
-      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#22C08A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    </svg>
-    <span class="logo-word">Worthwise</span>
-  </div>
-  <div class="links">
-    <a href="javascript:void(0)" data-scroll-target="how">How it works</a>
-    <a href="javascript:void(0)" data-scroll-target="value">Why Worthwise</a>
-  </div>
-  <a href="#/auth" class="btn btn-get-started btn-sm nav-cta">Get Started</a>
+<!-- Toast host -->
+<div id="toast-host" class="toast-host"></div>
+
+<!-- App shell: sidebar + topbar + routed view mount -->
+<div id="app-shell" class="app-shell">
+
+  <aside id="sidebar" class="sidebar"></aside>
+
+  <div id="mobile-bar" class="mobile-bar"></div>
+
+  <main id="view" class="view"></main>
+
+  <nav id="tab-bar" class="tab-bar"></nav>
 </div>
 
-<section class="hero">
-  <div class="hero-copy fade-up">
-    <div class="eyebrow">Personal Purchase Decision Engine</div>
-    <h1>Think before <em>you spend.</em></h1>
-    <p class="lead">Make purchases that fit your life — not just your budget. Worthwise weighs every purchase against your income, goals, and future plans before you buy.</p>
-    <div class="hero-ctas">
-      <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
-      <a href="javascript:void(0)" data-scroll-target="how" class="hero-secondary-link">See how it works <span aria-hidden="true">→</span></a>
-    </div>
+<!-- ============================================================
+     TEMPLATES — cloned into #view by app.js. Keeping them as
+     <template> tags means no page reload, no per-route HTML files,
+     and the whole thing still ships as one static bundle.
+============================================================= -->
 
-    <div class="decision-preview">
-      <div class="dial-wrap">
-        <div id="landing-dial"></div>
-        <div class="verdict">WAIT</div>
+<template id="tpl-landing">
+  <div class="scene scene-landing">
+    <header class="landing-nav">
+      <div class="brand"><span class="brand-mark">WW</span><span class="brand-word">Worth Wise</span></div>
+      <div class="landing-nav-actions">
+        <button class="link-btn" data-nav="#/auth?mode=login">Sign in</button>
+        <button class="btn btn-solid" data-nav="#/auth?mode=register">Get started</button>
       </div>
-      <div class="meta">
-        <span class="live-tag">Live example</span>
-        <p>₹42,000 purchase, checked against a real profile and goals.</p>
-      </div>
-    </div>
-  </div>
+    </header>
 
-  <div class="hero-visual fade-up">
-    <div class="hero-frame">
-      <!-- ===== Eye-catching wallet/money animation block ===== -->
-      <div class="wallet-anim-module">
-        <div class="wallet-container">
-          <div class="wallet-back"></div>
-          <div class="money-note">
-            <span class="note-text">₹500</span>
-          </div>
-          <div class="wallet-front"></div>
+    <section class="hero">
+      <div class="hero-left">
+        <p class="kicker">A financial decision engine</p>
+        <h1 class="hero-title">Before you buy.<br><span class="hero-title-accent">Ask Worth&nbsp;Wise.</span></h1>
+        <p class="hero-sub">Every purchase gets weighed against your income, your goals, and the next twelve months of your life — before you spend a rupee.</p>
+        <div class="hero-actions">
+          <button class="btn btn-solid btn-lg" data-nav="#/auth?mode=register">Start deciding smarter</button>
+          <button class="link-btn link-btn-arrow" data-scroll="how-it-works">See how it works</button>
         </div>
-
-        <div class="human-arm">
-          <div class="sleeve"></div>
-          <div class="cuff"></div>
-          <svg class="hand-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M30 10 C30 10, 70 10, 70 30 C70 45, 65 55, 55 60 C45 65, 30 50, 30 30 Z" fill="#f1c27d"/>
-            <path d="M32 25 C20 32, 18 45, 26 52 C32 55, 36 45, 36 35 Z" fill="#e0b06c"/>
-            <rect x="36" y="42" width="10" height="38" rx="5" fill="#f1c27d" transform="rotate(8 36 42)"/>
-            <rect x="47" y="42" width="10" height="42" rx="5" fill="#f1c27d" transform="rotate(3 47 42)"/>
-            <rect x="58" y="40" width="9" height="39" rx="4.5" fill="#e0b06c" transform="rotate(-3 58 40)"/>
-            <rect x="67" y="36" width="8" height="32" rx="4" fill="#d4a360" transform="rotate(-8 67 36)"/>
-          </svg>
-        </div>
-
-        <div class="alert-popup popup-stop">
-          <h2>Stop! 🛑</h2>
-          <p>It can destroy your savings.</p>
-        </div>
-
-        <div class="alert-popup popup-allow">
-          <h2>Approved! 🎉</h2>
-          <p>Yes, you can take it.</p>
+        <div class="hero-proof">
+          <div class="proof-chip"><span class="proof-num">₹0</span><span>fabricated data — ever</span></div>
+          <div class="proof-chip"><span class="proof-num">JWT</span><span>secured, stateless auth</span></div>
         </div>
       </div>
 
-      <p class="hero-frame-caption">Every purchase gets a verdict — before the money leaves your hand.</p>
-    </div>
-  </div>
-</section>
-
-<section class="value-strip" id="value">
-  <div class="value-strip-head reveal">
-    <span class="eyebrow">Why Worthwise</span>
-    <h2>Beyond a budget check</h2>
-  </div>
-  <div class="value-list">
-    <div class="value-row reveal">
-      <div class="n">01</div>
-      <div class="value-copy">
-        <h3>Affordability, not just balance</h3>
-        <p>Worthwise checks cash flow, savings buffer, and existing commitments — not just whether the money is sitting in your account today.</p>
-      </div>
-    </div>
-    <div class="value-row reveal">
-      <div class="n">02</div>
-      <div class="value-copy">
-        <h3>See what a purchase delays</h3>
-        <p>Every recommendation shows exactly how a purchase shifts your goal timelines — in months, not vague warnings.</p>
-      </div>
-    </div>
-    <div class="value-row reveal">
-      <div class="n">03</div>
-      <div class="value-copy">
-        <h3>Buy now, wait, or skip</h3>
-        <p>A clear, explainable verdict — with a simulator to see how waiting, saving more, or a discount changes the outcome.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="flow" id="how">
-  <span class="eyebrow flow-eyebrow reveal">How it works</span>
-  <h2 class="reveal">A financial decision workspace</h2>
-  <p class="sub reveal">Not a chatbot. Not a spreadsheet. A structured way to reason through a purchase.</p>
-  <div class="flow-steps">
-    <div class="step reveal"><span class="step-index">1</span><span class="step-label">Can I afford it?</span></div>
-    <div class="step reveal"><span class="step-index">2</span><span class="step-label">What will it change?</span></div>
-    <div class="step reveal"><span class="step-index">3</span><span class="step-label">Impact on my goals?</span></div>
-    <div class="step reveal"><span class="step-index">4</span><span class="step-label">What if I wait?</span></div>
-    <div class="step reveal"><span class="step-index">5</span><span class="step-label">What should I do?</span></div>
-  </div>
-</section>
-
-<section class="cta-band reveal">
-  <div class="cta-inner">
-    <h2>Your next purchase deserves five minutes of thought.</h2>
-    <p>Set up your financial profile once — Worthwise handles the analysis every time after.</p>
-    <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
-  </div>
-</section>
-
-<footer class="landing-footer">Worthwise · A personal purchase decision engine · Prototype build</footer>
-</div>
-
-<!-- ===================== APP SHELL ===================== -->
-<div id="app-views" style="display:none;">
-
-  <div id="mobile-topbar-slot"></div>
-
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar"></aside>
-
-    <main class="main">
-
-      <div class="page" id="view-auth" style="display:none;">
-<div class="page-header" style="text-align:center;">
-        <div class="eyebrow" style="justify-content:center; display:flex;">Account</div>
-        <h1 class="page-title">Welcome to your Worthwise workspace</h1>
-        <p class="page-sub">Your profile, goals, and decisions are stored under your account.</p>
-      </div>
-
-      <div class="auth-wrap">
-        <div class="auth-card fade-up">
-          <div class="auth-tabs">
-            <div class="auth-tab-slider" id="auth-tab-slider"></div>
-            <div class="auth-tab active" data-auth-tab="login" id="tab-login">Login</div>
-            <div class="auth-tab" data-auth-tab="register" id="tab-register">Create account</div>
-          </div>
-          <div class="auth-panels">
-            <div class="auth-panel" id="panel-login">
-              <h2 class="section-title">Welcome back</h2>
-              <p class="section-sub">Sign in to pick up right where you left off.</p>
-              <form id="login-form">
-                <div class="field"><label>Email</label><input class="input" id="login-email" type="email" required autocomplete="email"></div>
-                <div class="field"><label>Password</label><input class="input" id="login-password" type="password" required autocomplete="current-password"></div>
-                <button class="btn btn-primary btn-block btn-get-started" type="submit">Login</button>
-              </form>
-              <p class="muted mt-16" style="text-align:center; font-size:13.5px;">New here? <a href="javascript:void(0)" data-auth-tab="register" style="color:var(--pine); font-weight:600;">Create an account</a></p>
+      <div class="hero-right">
+        <div class="verdict-stage" id="landing-verdict-stage">
+          <div class="purse-scene" aria-hidden="true">
+            <div class="purse-body">
+              <div class="purse-flap"></div>
+              <div class="note note-a">₹</div>
+              <div class="note note-b">₹</div>
             </div>
-            <div class="auth-panel" id="panel-register" hidden>
-              <h2 class="section-title">Start fresh</h2>
-              <p class="section-sub">Create your profile and add your real numbers.</p>
-              <form id="register-form">
-                <div class="field"><label>Email</label><input class="input" id="register-email" type="email" required autocomplete="email"></div>
-                <div class="field"><label>Password</label><input class="input" id="register-password" type="password" minlength="8" required autocomplete="new-password"></div>
-                <button class="btn btn-primary btn-block btn-get-started" type="submit">Create account</button>
-              </form>
-              <p class="muted mt-16" style="text-align:center; font-size:13.5px;">Already have an account? <a href="javascript:void(0)" data-auth-tab="login" style="color:var(--pine); font-weight:600;">Login</a></p>
+            <div class="hand-reach">
+              <svg viewBox="0 0 64 64" class="hand-icon"><path d="M20 40 C16 34 15 24 17 18 C18 14 24 14 24 19 L24 28 M24 19 L24 30 M29 18 C29 14 34 14 34 19 L34 30 M34 19 C34 15 39 15 39 20 L39 31 M39 21 C39 17 44 18 44 22 L44 36 C44 46 38 52 30 52 C22 52 17 47 15 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
+          <div class="verdict-card">
+            <div class="verdict-eyebrow">Live example</div>
+            <div class="verdict-item">
+              <span class="verdict-item-label">Wireless headphones</span>
+              <span class="verdict-item-price">₹18,500</span>
+            </div>
+            <div class="verdict-dial-wrap">
+              <svg viewBox="0 0 160 96" class="verdict-dial">
+                <path d="M14 88 A66 66 0 0 1 146 88" class="dial-track"/>
+                <path d="M14 88 A66 66 0 0 1 146 88" class="dial-fill" id="landing-dial-fill"/>
+              </svg>
+              <div class="verdict-word" id="landing-verdict-word">WAIT</div>
+            </div>
+            <p class="verdict-note">Buying now delays your <b>Goa Trip</b> goal by 3 months. Worth Wise suggests waiting 6 weeks.</p>
+          </div>
         </div>
       </div>
-      <p class="muted mt-16" id="auth-status" style="text-align:center;"></p>
-      </div>
+    </section>
 
-      <div class="page" id="view-dashboard">
-<div class="page-header flex-between">
+    <section class="how-it-works" id="how-it-works">
+      <p class="section-kicker">How it works</p>
+      <div class="how-grid">
+        <div class="how-card">
+          <span class="how-index">01</span>
+          <h3>Tell it what you want to buy</h3>
+          <p>Product, price, category, and why you want it. Takes fifteen seconds.</p>
+        </div>
+        <div class="how-card">
+          <span class="how-index">02</span>
+          <h3>It checks your real finances</h3>
+          <p>Income, savings, existing EMIs, and every active goal — cross-referenced live.</p>
+        </div>
+        <div class="how-card">
+          <span class="how-index">03</span>
+          <h3>Get a verdict, not a lecture</h3>
+          <p>Buy now, wait, or skip — with the exact reasoning and a safer price range.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="value-strip" id="value">
+      <div class="value-row">
+        <h2>Your money, modeled honestly.</h2>
+        <p>No generic budgeting rules. Worth Wise runs your actual numbers through a decision engine tuned to your risk tolerance and goals — every single time you're tempted to spend.</p>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <span>Worth Wise — a personal purchase decision engine.</span>
+    </footer>
+  </div>
+</template>
+
+<template id="tpl-auth">
+  <div class="scene scene-auth">
+    <div class="auth-side">
+      <div class="brand brand-on-dark"><span class="brand-mark">WW</span><span class="brand-word">Worth Wise</span></div>
+      <blockquote class="auth-quote">"The best financial tool is the one that stops you thirty seconds before a bad decision."</blockquote>
+      <div class="auth-side-stat">
+        <div class="stat-ring" id="auth-side-ring"></div>
         <div>
-          <div class="eyebrow">Overview</div>
-          <h1 class="page-title fade-up" id="greeting">Good morning</h1>
-          <p class="page-sub fade-up">Understand your money. Make better purchase decisions.</p>
-        </div>
-        <a href="#/analyze" class="btn btn-primary hide-mobile">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          Analyze a Purchase
-        </a>
-      </div>
-
-      <!-- Financial Snapshot -->
-      <section class="grid grid-4" id="snapshot-grid" style="grid-template-columns:repeat(4,1fr);">
-        <!-- injected by dashboard.js -->
-      </section>
-
-      <!-- Health + Goal -->
-      <section class="grid cols-2 mt-24" style="grid-template-columns: 1.1fr 1fr;">
-        <div class="card" id="health-card"></div>
-        <div class="card" id="goal-card"></div>
-      </section>
-
-      <!-- Decisions + Planned -->
-      <section class="grid cols-2 mt-24" style="grid-template-columns: 1.15fr 1fr;">
-        <div class="card">
-          <div class="flex-between mb-16">
-            <div>
-              <h2 class="section-title">Recent Decisions</h2>
-              <p class="section-sub" style="margin-bottom:0;">Your last few purchase analyses</p>
-            </div>
-            <a href="#/decisions" class="btn btn-ghost btn-sm">View all →</a>
-          </div>
-          <div id="recent-decisions"></div>
-        </div>
-
-        <div class="card">
-          <div class="flex-between mb-16">
-            <div>
-              <h2 class="section-title">Planned Purchases</h2>
-              <p class="section-sub" style="margin-bottom:0;">Saving toward these already</p>
-            </div>
-          </div>
-          <div id="planned-purchases"></div>
-        </div>
-      </section>
-      </div>
-
-      <div class="page" id="view-analyze" style="display:none;">
-<div class="page-header" id="flow-header">
-        <div class="eyebrow">Analyze a Purchase</div>
-        <h1 class="page-title">Before you buy, understand the impact.</h1>
-        <p class="page-sub">Two quick steps — Worthwise handles the rest.</p>
-      </div>
-
-      <!-- step progress -->
-      <div class="step-progress" id="step-progress">
-        <div class="sp-item active" data-step="1"><span class="sp-dot">1</span>Product details</div>
-        <div class="sp-line"></div>
-        <div class="sp-item" data-step="2"><span class="sp-dot">2</span>Personal context</div>
-        <div class="sp-line"></div>
-        <div class="sp-item" data-step="3"><span class="sp-dot">3</span>Decision</div>
-      </div>
-
-      <!-- ===================== STEP 1 ===================== -->
-      <section class="step-panel card fade-up" id="step-1">
-        <h2 class="section-title">What are you thinking of buying?</h2>
-        <p class="section-sub">Tell us the basics — we'll fill in the financial context for you.</p>
-
-        <form id="purchase-form">
-          <div class="step-form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:0 20px;">
-            <div class="field">
-              <label for="p-name">Product name</label>
-              <input class="input" id="p-name" placeholder="e.g. Headphones, course, phone" required>
-            </div>
-            <div class="field">
-              <label for="p-category">Category</label>
-              <select class="select" id="p-category">
-                <option>Electronics</option>
-                <option>Home & Furniture</option>
-                <option>Fashion</option>
-                <option>Health & Fitness</option>
-                <option>Travel</option>
-                <option>Education</option>
-                <option>Other</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="p-price">Price</label>
-            <div class="input-prefix"><span>₹</span><input class="input" id="p-price" type="number" min="0" required></div>
-          </div>
-
-          <div class="field">
-            <label>Purchase type</label>
-            <div class="radio-row">
-              <div class="radio-pill active" data-type="ONE_TIME">One-time</div>
-              <div class="radio-pill" data-type="EMI">EMI</div>
-            </div>
-          </div>
-
-          <div id="emi-fields" style="display:none;">
-            <div class="step-form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:0 20px;">
-              <div class="field">
-                <label for="p-emi">Monthly payment</label>
-                <div class="input-prefix"><span>₹</span><input class="input" id="p-emi" type="number" min="0"></div>
-              </div>
-              <div class="field">
-                <label for="p-duration">Duration</label>
-                <div class="input-prefix" style="position:relative;">
-                  <input class="input" id="p-duration" type="number" min="1" style="padding-right:70px;">
-                  <span style="left:auto; right:14px;">months</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="p-reason">Why do you want this?</label>
-            <textarea class="input" id="p-reason" placeholder="A sentence or two helps Worthwise weigh the decision"></textarea>
-          </div>
-
-          <div class="field">
-            <label for="p-url">Product URL <span class="faint">(optional)</span></label>
-            <input class="input" id="p-url" placeholder="https://...">
-            <div class="hint">Used later to auto-fill price and specs from the retailer.</div>
-          </div>
-
-          <button type="submit" class="btn btn-primary" style="margin-top:6px;">Continue →</button>
-        </form>
-      </section>
-
-      <!-- ===================== STEP 2 ===================== -->
-      <section class="step-panel card fade-up" id="step-2" style="display:none;">
-        <h2 class="section-title">We'll evaluate this using your current financial profile</h2>
-        <p class="section-sub">No need to re-enter anything — here's what Worthwise already knows.</p>
-
-        <div class="profile-recap" id="profile-recap"></div>
-
-        <div class="flex-between mt-24" style="flex-wrap:wrap; gap:12px;">
-          <a href="#/profile" class="btn btn-ghost btn-sm">Edit financial profile</a>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-secondary" id="back-to-1">← Back</button>
-            <button class="btn btn-primary" id="analyze-btn">Analyze Purchase</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===================== LOADING ===================== -->
-      <section class="step-panel card fade-up" id="step-loading" style="display:none;">
-        <div class="loading-wrap">
-          <div class="loading-dial" id="loading-dial"></div>
-          <ul class="loading-steps" id="loading-steps">
-            <li>Analyzing your financial situation…</li>
-            <li>Checking affordability…</li>
-            <li>Calculating goal impact…</li>
-            <li>Exploring timing…</li>
-            <li>Generating recommendation…</li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- ===================== RESULTS ===================== -->
-      <section id="step-results" style="display:none;"></section>
-      </div>
-
-      <div class="page" id="view-decisions" style="display:none;">
-<div class="page-header">
-        <div class="eyebrow">My Decisions</div>
-        <h1 class="page-title">Every purchase you've weighed</h1>
-        <p class="page-sub">Each one is stored so you can revisit the reasoning later.</p>
-      </div>
-
-      <div class="decisions-toolbar">
-        <div class="filter-pills" id="filter-pills">
-          <div class="filter-pill active" data-filter="ALL">All</div>
-          <div class="filter-pill" data-filter="BUY">Buy</div>
-          <div class="filter-pill" data-filter="WAIT">Wait</div>
-          <div class="filter-pill" data-filter="SKIP">Skip</div>
-        </div>
-        <div class="search-box">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input class="input" id="search-input" placeholder="Search purchases...">
+          <div class="stat-num">82</div>
+          <div class="stat-label">avg. financial health score among decisive users</div>
         </div>
       </div>
-
-      <div class="card" style="padding:0; overflow:hidden;">
-        <table class="decisions-table">
-          <thead>
-            <tr><th>Product</th><th>Price</th><th>Decision</th><th>Date</th></tr>
-          </thead>
-          <tbody id="decisions-tbody"></tbody>
-        </table>
-        <div class="decisions-cards" id="decisions-cards" style="padding:12px;"></div>
+    </div>
+    <div class="auth-form-wrap">
+      <div class="auth-tabs">
+        <button class="auth-tab" data-auth-tab="login">Sign in</button>
+        <button class="auth-tab" data-auth-tab="register">Create account</button>
+        <div class="auth-tab-indicator"></div>
       </div>
 
-      <div id="empty-slot"></div>
+      <form id="login-form" class="auth-form">
+        <h2>Welcome back</h2>
+        <p class="auth-form-sub">Pick up right where your finances left off.</p>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+        </label>
+        <div class="field-error" id="login-error"></div>
+        <button type="submit" class="btn btn-solid btn-block btn-lg">
+          <span class="btn-label">Sign in</span>
+          <span class="btn-spinner"></span>
+        </button>
+      </form>
 
-<!-- ===== Decision Detail Modal ===== -->
-<div id="detail-modal" class="detail-modal-overlay" style="display:none;">
-  <div class="detail-modal">
-    <button class="detail-close" id="detail-close" aria-label="Close">✕</button>
-    <div id="detail-content"></div>
+      <form id="register-form" class="auth-form">
+        <h2>Create your account</h2>
+        <p class="auth-form-sub">Takes under a minute. No credit card, obviously.</p>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+        </label>
+        <div class="field-error" id="register-error"></div>
+        <button type="submit" class="btn btn-solid btn-block btn-lg">
+          <span class="btn-label">Create account</span>
+          <span class="btn-spinner"></span>
+        </button>
+      </form>
+    </div>
   </div>
-</div>
+</template>
+
+<template id="tpl-dashboard">
+  <div class="scene scene-app" data-page="dashboard">
+    <header class="page-head">
+      <div>
+        <p class="page-kicker" id="dash-greeting-time">Good afternoon</p>
+        <h1 id="dash-greeting-name">Command Center</h1>
       </div>
+      <button class="btn btn-solid" data-nav="#/analyze">
+        <svg viewBox="0 0 24 24" class="icon-16"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+        Should I buy this?
+      </button>
+    </header>
 
-      <div class="page" id="view-goals" style="display:none;">
-<div class="page-header">
-        <div class="eyebrow">Goals</div>
-        <h1 class="page-title">What you're saving toward</h1>
-        <p class="page-sub">Worthwise checks every purchase against these before recommending BUY.</p>
-      </div>
+    <div class="skeleton-zone" id="dash-skeleton"></div>
 
-      <div class="goals-grid" id="goals-grid"></div>
-      </div>
-
-      <div class="page" id="view-profile" style="display:none;">
-<div class="page-header">
-        <div class="eyebrow">Financial Profile</div>
-        <h1 class="page-title">The more you tell us, the sharper the advice</h1>
-        <p class="page-sub">This data powers every affordability check and goal-impact estimate.</p>
-      </div>
-
-      <div class="profile-layout">
-        <nav class="profile-nav">
-          <a href="javascript:void(0)" data-scroll-target="income-card">Income</a>
-          <a href="javascript:void(0)" data-scroll-target="expenses-card">Expenses</a>
-          <a href="javascript:void(0)" data-scroll-target="savings-card">Savings</a>
-          <a href="javascript:void(0)" data-scroll-target="commitments-card">Commitments</a>
-          <a href="javascript:void(0)" data-scroll-target="preferences-card">Preferences</a>
-          <a href="javascript:void(0)" data-scroll-target="settings-card" id="settings">Settings</a>
-        </nav>
-
-        <div>
-          <div class="card profile-section" id="income-card">
-            <h2 class="section-title">Income</h2>
-            <p class="section-sub">Your regular monthly take-home income.</p>
-            <div class="field" style="max-width:280px;">
-              <label>Monthly income</label>
-              <div class="input-prefix"><span>₹</span><input class="input" id="in-income" type="number"></div>
+    <div id="dash-content" class="dash-grid hidden">
+      <!-- Health hero -->
+      <section class="card card-health">
+        <div class="health-left">
+          <p class="card-eyebrow">Financial Health</p>
+          <div class="health-score-row">
+            <span class="health-score" id="health-score">--</span>
+            <span class="health-label" id="health-label">—</span>
+          </div>
+          <div class="health-bar-track"><div class="health-bar-fill" id="health-bar-fill"></div></div>
+          <div class="health-facts" id="health-facts"></div>
+        </div>
+        <div class="health-right">
+          <div class="xp-ring-wrap">
+            <svg viewBox="0 0 120 120" class="xp-ring">
+              <circle cx="60" cy="60" r="52" class="xp-ring-track"/>
+              <circle cx="60" cy="60" r="52" class="xp-ring-fill" id="xp-ring-fill"/>
+            </svg>
+            <div class="xp-ring-center">
+              <span class="xp-level" id="xp-level">Lv.1</span>
+              <span class="xp-caption">Guardian</span>
             </div>
           </div>
-
-          <div class="card profile-section" id="expenses-card">
-            <h2 class="section-title">Expenses</h2>
-            <p class="section-sub">A rough monthly breakdown helps us estimate your real surplus.</p>
-            <div id="expense-fields"></div>
-          </div>
-
-          <div class="card profile-section" id="savings-card">
-            <h2 class="section-title">Savings</h2>
-            <p class="section-sub">What you currently hold in savings or liquid investments.</p>
-            <div class="field" style="max-width:280px;">
-              <label>Current savings</label>
-              <div class="input-prefix"><span>₹</span><input class="input" id="in-savings" type="number"></div>
-            </div>
-          </div>
-
-          <div class="card profile-section" id="commitments-card">
-            <h2 class="section-title">Commitments</h2>
-            <p class="section-sub">Loans, EMIs, and subscriptions already reducing your surplus.</p>
-            <div id="commitments-list"></div>
-            <button class="btn btn-ghost btn-sm mt-16">+ Add commitment</button>
-          </div>
-
-          <div class="card profile-section" id="preferences-card">
-            <h2 class="section-title">Preferences</h2>
-            <p class="section-sub">Tune how conservative Worthwise should be in its recommendations.</p>
-
-            <div class="pref-row">
-              <label style="font-weight:600; font-size:14px; display:block; margin-bottom:8px;">Risk tolerance</label>
-              <div class="radio-row" id="pref-risk">
-                <div class="radio-pill" data-val="LOW">Low</div>
-                <div class="radio-pill" data-val="MODERATE">Moderate</div>
-                <div class="radio-pill" data-val="HIGH">High</div>
-              </div>
-            </div>
-            <div class="pref-row">
-              <label style="font-weight:600; font-size:14px; display:block; margin-bottom:8px;">Saving priority</label>
-              <div class="radio-row" id="pref-priority">
-                <div class="radio-pill" data-val="GOAL_FIRST">Goal-first</div>
-                <div class="radio-pill" data-val="BALANCED">Balanced</div>
-                <div class="radio-pill" data-val="FLEXIBLE">Flexible</div>
-              </div>
-            </div>
-            <div class="pref-row" style="margin-bottom:0;">
-              <label style="font-weight:600; font-size:14px; display:block; margin-bottom:8px;">Purchase preference</label>
-              <div class="radio-row" id="pref-purchase">
-                <div class="radio-pill" data-val="VALUE_OVER_BRAND">Value over brand</div>
-                <div class="radio-pill" data-val="QUALITY_FIRST">Quality-first</div>
-                <div class="radio-pill" data-val="BALANCED">Balanced</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card profile-section" id="settings-card">
-            <h2 class="section-title">Settings</h2>
-            <p class="section-sub">Account and notification preferences.</p>
-            <div class="commitment-row"><span>Email notifications for new analyses</span><span class="badge badge-buy">On</span></div>
-            <div class="commitment-row"><span>Weekly financial health summary</span><span class="badge badge-buy">On</span></div>
-            <div class="commitment-row"><span>Currency</span><span class="badge badge-neutral">INR (₹)</span></div>
-          </div>
-
-          <div class="save-bar">
-            <span class="muted" id="save-status" style="align-self:center; margin-right:auto; font-size:13.5px;"></span>
-            <button class="btn btn-secondary" onclick="window.location.reload()">Discard</button>
-            <button class="btn btn-primary" id="save-btn">Save Changes</button>
+          <div class="streak-chip" id="streak-chip">
+            <svg viewBox="0 0 24 24" class="icon-14"><path d="M12 2c1 4-3 5-3 9a3 3 0 006 0c1.5 1.2 2 3 2 4.5A5.5 5.5 0 0112 21a5.5 5.5 0 01-5-8c1-2.2 3-3 3-6.5C10 4.7 11 3 12 2z" fill="currentColor"/></svg>
+            <span id="streak-text">0 decision streak</span>
           </div>
         </div>
+      </section>
+
+      <!-- Money stats -->
+      <section class="stat-row">
+        <div class="stat-card">
+          <p class="card-eyebrow">Monthly surplus</p>
+          <p class="stat-value" id="stat-surplus">₹0</p>
+          <p class="stat-sub" id="stat-surplus-sub">income minus expenses</p>
+        </div>
+        <div class="stat-card">
+          <p class="card-eyebrow">Current savings</p>
+          <p class="stat-value" id="stat-savings">₹0</p>
+          <p class="stat-sub" id="stat-savings-sub">emergency buffer</p>
+        </div>
+        <div class="stat-card">
+          <p class="card-eyebrow">Existing EMI load</p>
+          <p class="stat-value" id="stat-emi">₹0</p>
+          <p class="stat-sub" id="stat-emi-sub">per month</p>
+        </div>
+      </section>
+
+      <!-- Goals -->
+      <section class="card card-goals">
+        <div class="card-head">
+          <h2>Active goals</h2>
+          <button class="link-btn" data-nav="#/goals">Manage all →</button>
+        </div>
+        <div id="dash-goals-list" class="goal-mini-list"></div>
+      </section>
+
+      <!-- Recent decisions -->
+      <section class="card card-recent">
+        <div class="card-head">
+          <h2>Recent decisions</h2>
+          <button class="link-btn" data-nav="#/history">Full history →</button>
+        </div>
+        <div id="dash-recent-list" class="recent-list"></div>
+      </section>
+    </div>
+
+    <div id="dash-error" class="state-block hidden"></div>
+  </div>
+</template>
+
+<template id="tpl-analyze">
+  <div class="scene scene-app" data-page="analyze">
+    <header class="page-head">
+      <div>
+        <p class="page-kicker">Decision engine</p>
+        <h1>Should I buy this?</h1>
       </div>
+    </header>
+
+    <div class="analyze-stage" id="analyze-stage">
+
+      <!-- STEP: form -->
+      <form id="analyze-form" class="analyze-panel panel-form">
+        <div class="form-grid">
+          <label class="field field-span2">
+            <span>What are you buying?</span>
+            <input type="text" name="productName" required placeholder="e.g. Sony WH-1000XM5">
+          </label>
+          <label class="field">
+            <span>Category</span>
+            <input type="text" name="category" required placeholder="Electronics">
+          </label>
+          <label class="field">
+            <span>Price (₹)</span>
+            <input type="number" name="price" required min="1" step="1" placeholder="18500">
+          </label>
+          <label class="field">
+            <span>Purchase type</span>
+            <select name="purchaseType">
+              <option value="ONE_TIME">Pay in full</option>
+              <option value="EMI">EMI</option>
+            </select>
+          </label>
+          <label class="field emi-field hidden">
+            <span>Monthly EMI (₹)</span>
+            <input type="number" name="monthlyEmi" min="0" step="1" placeholder="1500">
+          </label>
+          <label class="field emi-field hidden">
+            <span>EMI duration (months)</span>
+            <input type="number" name="durationMonths" min="1" step="1" placeholder="12">
+          </label>
+          <label class="field field-span2">
+            <span>Why do you want it? <i>(optional)</i></span>
+            <textarea name="reason" rows="2" placeholder="My current one broke, and I use headphones daily for work."></textarea>
+          </label>
+        </div>
+        <div class="field-error" id="analyze-error"></div>
+        <button type="submit" class="btn btn-solid btn-lg btn-block">
+          <span class="btn-label">Analyze this purchase</span>
+          <span class="btn-spinner"></span>
+        </button>
+      </form>
+
+      <!-- STEP: analyzing sequence -->
+      <div class="analyze-panel panel-loading hidden">
+        <div class="scan-orb"><div class="scan-orb-core"></div></div>
+        <h3 id="analyze-loading-headline">Analyzing your purchase…</h3>
+        <ul class="scan-steps" id="scan-steps">
+          <li data-step="capacity"><span class="scan-dot"></span> Checking spending capacity</li>
+          <li data-step="goals"><span class="scan-dot"></span> Cross-referencing your goals</li>
+          <li data-step="afford"><span class="scan-dot"></span> Modeling affordability</li>
+          <li data-step="decide"><span class="scan-dot"></span> Calculating the verdict</li>
+        </ul>
       </div>
 
-    </main>
+      <!-- STEP: result -->
+      <div class="analyze-panel panel-result hidden" id="analyze-result">
+        <div class="result-top">
+          <div class="result-dial-wrap">
+            <svg viewBox="0 0 200 120" class="result-dial">
+              <path d="M16 110 A84 84 0 0 1 184 110" class="dial-track"/>
+              <path d="M16 110 A84 84 0 0 1 184 110" class="dial-fill" id="result-dial-fill"/>
+            </svg>
+            <div class="result-dial-center">
+              <span class="result-score" id="result-score">0</span>
+              <span class="result-score-label">score</span>
+            </div>
+          </div>
+          <div class="result-verdict-block">
+            <span class="verdict-badge" id="result-badge">—</span>
+            <h2 id="result-product-name">—</h2>
+            <p id="result-price-line">—</p>
+          </div>
+        </div>
+
+        <div class="result-metrics" id="result-metrics"></div>
+
+        <div class="result-section" id="result-reasons-section">
+          <h3>Why</h3>
+          <ul class="reason-list" id="result-reasons"></ul>
+        </div>
+
+        <div class="result-section hidden" id="result-alt-section">
+          <h3>Alternatives worth a look</h3>
+          <div class="alt-list" id="result-alternatives"></div>
+        </div>
+
+        <div class="result-section hidden" id="result-plan-section">
+          <h3>Suggested plan</h3>
+          <ol class="plan-list" id="result-plan"></ol>
+        </div>
+
+        <div class="result-section hidden" id="result-ai-section">
+          <h3>Worth Wise's take</h3>
+          <p class="ai-explanation" id="result-ai-text"></p>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn btn-ghost" id="result-again-btn">Analyze another</button>
+          <button class="btn btn-solid" data-nav="#/history">View in history</button>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</template>
+
+<template id="tpl-goals">
+  <div class="scene scene-app" data-page="goals">
+    <header class="page-head">
+      <div>
+        <p class="page-kicker">Progression</p>
+        <h1>Your goals</h1>
+      </div>
+      <button class="btn btn-solid" id="goal-new-btn">
+        <svg viewBox="0 0 24 24" class="icon-16"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+        New goal
+      </button>
+    </header>
+
+    <div class="skeleton-zone" id="goals-skeleton"></div>
+    <div id="goals-grid" class="goals-grid hidden"></div>
+    <div id="goals-empty" class="state-block hidden">
+      <h3>No goals yet</h3>
+      <p>Set your first goal and Worth Wise will factor it into every purchase decision.</p>
+      <button class="btn btn-solid" id="goals-empty-cta">Create a goal</button>
+    </div>
+    <div id="goals-error" class="state-block hidden"></div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="goal-modal-backdrop">
+    <div class="modal" id="goal-modal">
+      <div class="modal-head">
+        <h2 id="goal-modal-title">New goal</h2>
+        <button class="modal-close" id="goal-modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="goal-form" class="modal-body">
+        <input type="hidden" name="id">
+        <label class="field">
+          <span>Goal name</span>
+          <input type="text" name="name" required placeholder="Goa Trip">
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Target amount (₹)</span>
+            <input type="number" name="targetAmount" required min="1" step="1">
+          </label>
+          <label class="field">
+            <span>Already saved (₹)</span>
+            <input type="number" name="currentAmount" min="0" step="1" value="0">
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field">
+            <span>Target date</span>
+            <input type="date" name="targetDate" required>
+          </label>
+          <label class="field">
+            <span>Priority</span>
+            <select name="priority">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM" selected>Medium</option>
+              <option value="HIGH">High</option>
+            </select>
+          </label>
+        </div>
+        <div class="field-error" id="goal-form-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="goal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-solid">
+            <span class="btn-label">Save goal</span>
+            <span class="btn-spinner"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-history">
+  <div class="scene scene-app" data-page="history">
+    <header class="page-head">
+      <div>
+        <p class="page-kicker">Track record</p>
+        <h1>Decision history</h1>
+      </div>
+    </header>
+
+    <div class="history-filters" id="history-filters">
+      <button class="filter-chip active" data-filter="ALL">All</button>
+      <button class="filter-chip" data-filter="BUY_NOW">Bought</button>
+      <button class="filter-chip" data-filter="WAIT">Waited</button>
+      <button class="filter-chip" data-filter="DONT_BUY">Skipped</button>
+      <button class="filter-chip" data-filter="CONSIDER_ALTERNATIVE">Alternatives</button>
+    </div>
+
+    <div class="skeleton-zone" id="history-skeleton"></div>
+    <div id="history-list" class="history-list hidden"></div>
+    <div id="history-empty" class="state-block hidden">
+      <h3>No decisions yet</h3>
+      <p>Every purchase you analyze will show up here.</p>
+      <button class="btn btn-solid" data-nav="#/analyze">Analyze your first purchase</button>
+    </div>
+    <div id="history-error" class="state-block hidden"></div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="decision-modal-backdrop">
+    <div class="modal modal-lg" id="decision-modal">
+      <div class="modal-head">
+        <h2 id="decision-modal-title">Decision</h2>
+        <button class="modal-close" id="decision-modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="decision-modal-body"></div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-profile">
+  <div class="scene scene-app" data-page="profile">
+    <header class="page-head">
+      <div>
+        <p class="page-kicker">Foundation</p>
+        <h1>Financial profile</h1>
+      </div>
+    </header>
+
+    <div class="skeleton-zone" id="profile-skeleton"></div>
+
+    <form id="profile-form" class="profile-form hidden">
+      <section class="card">
+        <h2>Income &amp; savings</h2>
+        <div class="field-row">
+          <label class="field">
+            <span>Monthly income (₹)</span>
+            <input type="number" name="monthlyIncome" min="0" step="1">
+          </label>
+          <label class="field">
+            <span>Current savings (₹)</span>
+            <input type="number" name="currentSavings" min="0" step="1">
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field">
+            <span>Emergency fund target (₹)</span>
+            <input type="number" name="emergencyFundTarget" min="0" step="1">
+          </label>
+          <label class="field">
+            <span>Existing EMI / month (₹)</span>
+            <input type="number" name="existingEmi" min="0" step="1">
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Monthly expense breakdown</h2>
+        <p class="card-sub">Used to calculate your real spending capacity.</p>
+        <div class="expense-grid" id="expense-grid"></div>
+        <button type="button" class="link-btn" id="expense-add-btn">+ Add expense category</button>
+      </section>
+
+      <section class="card">
+        <h2>Preferences</h2>
+        <div class="field-row field-row-3">
+          <label class="field">
+            <span>Risk tolerance</span>
+            <select name="riskTolerance">
+              <option value="LOW">Low</option>
+              <option value="MODERATE">Moderate</option>
+              <option value="HIGH">High</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Saving priority</span>
+            <select name="savingPriority">
+              <option value="GOAL_FIRST">Goal first</option>
+              <option value="BALANCED">Balanced</option>
+              <option value="FLEXIBLE">Flexible</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Purchase preference</span>
+            <select name="purchasePreference">
+              <option value="VALUE_OVER_BRAND">Value over brand</option>
+              <option value="QUALITY_FIRST">Quality first</option>
+              <option value="BALANCED">Balanced</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <div class="field-error" id="profile-error"></div>
+      <div class="profile-save-bar">
+        <span class="save-hint" id="profile-save-hint"></span>
+        <button type="submit" class="btn btn-solid btn-lg">
+          <span class="btn-label">Save profile</span>
+          <span class="btn-spinner"></span>
+        </button>
+      </div>
+    </form>
+
+    <section class="card" id="settings-card">
+      <h2>Account</h2>
+      <p class="card-sub" id="account-email-line"></p>
+      <button class="btn btn-ghost" id="logout-btn">Log out</button>
+    </section>
+
+    <div id="profile-error-block" class="state-block hidden"></div>
+  </div>
+</template>
 
 <script src="app.js"></script>
 </body>
