@@ -1001,7 +1001,6 @@ input[type="range"]::-moz-range-thumb{
   69%, 78% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   82%, 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
 }
-
 @media (max-width: 560px){
   .wallet-anim-module{ height: 190px; }
   .wallet-anim-module .wallet-container{ left: 20px; }
