@@ -1568,7 +1568,6 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.textContent = 'Save Changes'; btn.disabled = false;
     }
   });
-
   const landingDialEl = document.getElementById('landing-dial');
   if (landingDialEl) {
     // Render at 0 first, then flip to the real value on the next frame —
