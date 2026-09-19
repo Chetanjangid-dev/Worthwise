@@ -1,5 +1,5 @@
 /**
- * SpendWise — API Service Layer
+ * Worthwise — API Service Layer
  * ---------------------------------------------------
  * Every function below simulates a future REST endpoint served by a
  * Spring Boot backend (PostgreSQL persistence + a decision engine).
@@ -337,7 +337,7 @@ const DecisionEngineMock = (() => {
   return { run, simulate };
 })();
 /**
- * SpendWise — shared shell logic used across every app page.
+ * Worthwise — shared shell logic used across every app page.
  */
 
 const Fmt = {
@@ -405,13 +405,13 @@ const ICONS = {
 function logoMarkup(){
   return `
   <div class="logo">
-    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-      <rect x="1" y="6" width="24" height="17" rx="4" fill="#0F6B4F"/>
-      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#0B4E3A"/>
-      <circle cx="18.5" cy="14.5" r="3.1" fill="#F5F6F3"/>
-      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#0F6B4F" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <svg class="logo-mark" width="28" height="28" viewBox="0 0 26 26" fill="none">
+      <rect x="1" y="6" width="24" height="17" rx="4" fill="#2FD196"/>
+      <path d="M1 10.5C1 8.01 3.01 6 5.5 6H21c2.21 0 4 1.79 4 4v1H1v-.5Z" fill="#1B9E75"/>
+      <circle cx="18.5" cy="14.5" r="3.1" fill="#0A0C0F"/>
+      <path d="M17 14.6l1.1 1.1 2-2.2" stroke="#2FD196" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
     </svg>
-    <span class="logo-word">SpendWise</span>
+    <span class="logo-word">Worthwise</span>
   </div>`;
 }
 
@@ -493,6 +493,7 @@ function initShell(){
 
   if (!authed) {
     if (sidebar) { sidebar.innerHTML = ''; sidebar.style.display = 'none'; }
+    removeMobileBottomNav();
     return;
   }
 
@@ -500,6 +501,9 @@ function initShell(){
     sidebar.style.display = '';
     sidebar.innerHTML = sidebarMarkup(path);
   }
+
+  // Mobile-only bottom navigation + account sheet (hidden on desktop via CSS).
+  renderMobileBottomNav(SpendWiseRouter.currentRoute || 'dashboard');
 
   // Mobile drawer behaviour (only relevant when the toggle button exists,
   // i.e. only for logged-in users — see mobileTopbarMarkup above).
@@ -518,6 +522,123 @@ function initShell(){
   sidebar?.addEventListener('click', (e) => {
     if (e.target.closest('a.nav-link') || e.target.closest('a.profile-mini')) closeDrawer();
   });
+}
+
+/* ==========================================================================
+ * Mobile bottom navigation + Account sheet (phones/tablets <= 900px only).
+ * On desktop the sidebar is used and none of this is visible (see CSS).
+ * Tabs: Overview, Analyze, Decisions, Goals, Account. The Account tab opens
+ * a sheet with the logged-in email, Financial Profile, Settings and Logout.
+ * ========================================================================== */
+const BOTTOM_TABS = [
+  { key: 'dashboard', route: '#/dashboard', label: 'Overview',  icon: 'grid'   },
+  { key: 'analyze',   route: '#/analyze',   label: 'Analyze',   icon: 'scan'   },
+  { key: 'decisions', route: '#/decisions', label: 'Decisions', icon: 'list'   },
+  { key: 'goals',     route: '#/goals',     label: 'Goals',     icon: 'target' },
+];
+const EXTRA_ICONS = {
+  user:   '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+};
+function bnSvg(inner, size = 22){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+}
+function userInitials(user){
+  const src = (user && user.name && user.name !== 'User') ? user.name : ((user && user.email) || '');
+  const base = src.split('@')[0].replace(/[^a-zA-Z0-9 ._-]/g, '');
+  const parts = base.split(/[ ._-]+/).filter(Boolean);
+  const ini = parts.length > 1 ? parts[0][0] + parts[1][0] : (parts[0] || 'U').slice(0, 2);
+  return ini.toUpperCase();
+}
+
+function removeMobileBottomNav(){
+  ['mobile-bottom-nav', 'account-overlay', 'account-sheet'].forEach(id => document.getElementById(id)?.remove());
+  document.body.classList.remove('sheet-open');
+}
+
+function renderMobileBottomNav(activeKey){
+  removeMobileBottomNav();
+
+  const accountActive = activeKey === 'profile';
+  const nav = document.createElement('nav');
+  nav.id = 'mobile-bottom-nav';
+  nav.className = 'bottom-nav';
+  nav.setAttribute('aria-label', 'Main navigation');
+  nav.innerHTML = BOTTOM_TABS.map(t => `
+    <a class="bn-item${activeKey === t.key ? ' active' : ''}" href="${t.route}"${activeKey === t.key ? ' aria-current="page"' : ''}>
+      <span class="bn-ico">${bnSvg(ICONS[t.icon])}</span><span class="bn-label">${t.label}</span>
+    </a>`).join('') + `
+    <button type="button" class="bn-item${accountActive ? ' active' : ''}" id="bn-account" aria-haspopup="dialog" aria-expanded="false">
+      <span class="bn-ico">${bnSvg(EXTRA_ICONS.user)}</span><span class="bn-label">Account</span>
+    </button>`;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'account-overlay';
+  overlay.className = 'account-overlay';
+
+  const sheet = document.createElement('div');
+  sheet.id = 'account-sheet';
+  sheet.className = 'account-sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', 'Account');
+  sheet.innerHTML = `
+    <div class="as-grabber"></div>
+    <div class="as-user">
+      <div class="avatar as-avatar" id="as-avatar">U</div>
+      <div class="as-user-text">
+        <div class="as-label">Signed in as</div>
+        <div class="as-email" id="as-email"></div>
+      </div>
+    </div>
+    <div class="as-health"><span>Your financial health</span><b><span class="dot"></span> Good</b></div>
+    <a class="as-link" href="#/profile">
+      <span class="as-ico as-ico-profile">${bnSvg(ICONS.sliders, 20)}</span>
+      <span class="as-link-text"><b>Financial Profile</b><small>Income, expenses, savings &amp; preferences</small></span>
+    </a>
+    <a class="as-link" href="#/profile?view=settings">
+      <span class="as-ico as-ico-settings">${bnSvg(ICONS.settings, 20)}</span>
+      <span class="as-link-text"><b>Settings</b><small>Notifications &amp; currency</small></span>
+    </a>
+    <button type="button" class="as-logout" id="as-logout">${bnSvg(EXTRA_ICONS.logout, 18)}<span>Logout</span></button>`;
+
+  document.body.append(nav, overlay, sheet);
+
+  const accountBtn = nav.querySelector('#bn-account');
+  function openSheet(){
+    // Read the user at open-time so the email is always the current login.
+    const u = currentUserCache || {};
+    sheet.querySelector('#as-email').textContent = u.email || u.name || 'Your account';
+    sheet.querySelector('#as-avatar').textContent = userInitials(u);
+    sheet.classList.add('open');
+    overlay.classList.add('visible');
+    document.body.classList.add('sheet-open');
+    accountBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closeSheet(){
+    sheet.classList.remove('open');
+    overlay.classList.remove('visible');
+    document.body.classList.remove('sheet-open');
+    accountBtn.setAttribute('aria-expanded', 'false');
+  }
+  accountBtn.addEventListener('click', () => sheet.classList.contains('open') ? closeSheet() : openSheet());
+  overlay.addEventListener('click', closeSheet);
+  sheet.addEventListener('click', (e) => { if (e.target.closest('a.as-link')) closeSheet(); });
+  sheet.querySelector('#as-logout').addEventListener('click', () => {
+    closeSheet();
+    SpendWiseAPI.logout();
+  });
+
+  // One-time global listeners (Esc to close, close if resized up to desktop).
+  if (!window.__bottomNavGlobals) {
+    window.__bottomNavGlobals = true;
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') document.getElementById('account-overlay')?.click();
+    });
+    window.matchMedia('(min-width: 901px)').addEventListener('change', (e) => {
+      if (e.matches) document.getElementById('account-overlay')?.click();
+    });
+  }
 }
 
 /**
@@ -652,7 +773,7 @@ function renderHealth(user, profile){
   const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
   const label = score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'Set up profile';
   const healthCopy = income <= 0
-    ? 'Add your real income, expenses, savings, and goals. SpendWise will update this score from your saved database profile.'
+    ? 'Add your real income, expenses, savings, and goals. Worthwise will update this score from your saved database profile.'
     : surplus < 0
       ? 'Your monthly expenses are higher than your income, so purchases should wait until cash flow improves.'
       : 'This score is calculated from your saved income, expenses, surplus, and emergency fund progress.';
@@ -1282,7 +1403,7 @@ function emptyState(title, body){
   document.addEventListener('DOMContentLoaded', init);
 })();
 /* ------------------------------------------------------------------ *
- * SpendWise — single-file router
+ * Worthwise — single-file router
  * Shows/hides page sections based on the URL hash instead of loading
  * separate .html files. Routes: #/dashboard #/analyze #/decisions
  * #/goals #/profile  (empty hash = landing page)
@@ -1342,11 +1463,46 @@ function navigate(){
   if (target === 'dashboard') loadDashboard();
   if (target === 'goals' && window.SpendWiseGoals) window.SpendWiseGoals.reinit();
   if (target === 'profile' && window.SpendWiseProfile) window.SpendWiseProfile.reinit();
+  if (target === 'profile') applyProfileMode(new URLSearchParams(query).get('view'));
 
   window.scrollTo(0, 0);
 }
 
 window.addEventListener('hashchange', navigate);
+
+// ---------------------------------------------------------------------------
+// Mobile: "Financial Profile" and "Settings" are separate screens.
+//   #/profile                -> profile sections only
+//   #/profile?view=settings  -> settings only (with its own header)
+// CSS (max-width:900px) hides the other half; desktop still shows everything.
+// ---------------------------------------------------------------------------
+const PROFILE_HEADERS = {
+  profile:  null, // keep the original markup text
+  settings: { eyebrow: 'Settings', title: 'Account & preferences', sub: 'Manage your notifications and display options.' },
+};
+function applyProfileMode(view){
+  const page = document.getElementById('view-profile');
+  if (!page) return;
+  const mode = view === 'settings' ? 'settings' : 'profile';
+  page.dataset.mode = mode;
+
+  const eyebrow = page.querySelector('.page-header .eyebrow');
+  const title = page.querySelector('.page-header .page-title');
+  const sub = page.querySelector('.page-header .page-sub');
+  if (!eyebrow || !title || !sub) return;
+  if (!page.dataset.origHeader) {
+    page.dataset.origHeader = JSON.stringify({ eyebrow: eyebrow.textContent, title: title.textContent, sub: sub.textContent });
+  }
+  const orig = JSON.parse(page.dataset.origHeader);
+  const isMobile = window.matchMedia('(max-width: 900px)').matches;
+  const h = (mode === 'settings' && isMobile) ? PROFILE_HEADERS.settings : orig;
+  eyebrow.textContent = h.eyebrow; title.textContent = h.title; sub.textContent = h.sub;
+}
+window.matchMedia('(max-width: 900px)').addEventListener('change', () => {
+  const page = document.getElementById('view-profile');
+  if (page) applyProfileMode(page.dataset.mode);
+});
+
 
 document.addEventListener('DOMContentLoaded', () => {
   navigate();
@@ -1568,20 +1724,177 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.textContent = 'Save Changes'; btn.disabled = false;
     }
   });
-  const landingDialEl = document.getElementById('landing-dial');
-  if (landingDialEl) {
-    // Render at 0 first, then flip to the real value on the next frame —
-    // this is what makes the stroke-dashoffset transition actually sweep
-    // in, instead of rendering already-complete with no motion.
-    landingDialEl.innerHTML = decisionDial({ value: 0, color: 'var(--wait)', size: 150 });
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        landingDialEl.innerHTML = decisionDial({ value: 62, color: 'var(--wait)', size: 150 });
-        const verdictEl = document.querySelector('.decision-preview .verdict');
-        const dialWrapEl = document.querySelector('.decision-preview .dial-wrap');
-        if (verdictEl) verdictEl.classList.add('verdict-reveal');
-        if (dialWrapEl) dialWrapEl.classList.add('dial-glow-bloom');
-      });
-    });
-  }
+  initLiveSimulator();
 // goals inline + profile inline + landing inline appended above
+
+// ---------------------------------------------------------------------------
+// Landing hero: interactive "try it live" purchase simulator.
+// Replaces the old static WAIT gauge. Drag the slider (or let the short
+// auto-demo run) and the needle, colour, verdict and impact numbers respond.
+// Uses a fixed sample profile — purely illustrative, no real data.
+// ---------------------------------------------------------------------------
+function initLiveSimulator(){
+  const wrap = document.querySelector('.decision-preview .dial-wrap');
+  if (!wrap) return;
+
+  const SAMPLE = { savings: 100000, monthlySaving: 12000 };
+  const MIN = 2000, MAX = 100000, STEP = 1000, START = 48000;
+  const R = 70, CX = 90, CY = 90, ARC = Math.PI * R;
+  const inr = n => '\u20B9' + Math.round(n).toLocaleString('en-IN');
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  // point on the gauge arc for a 0-100 score (0 = far left, 100 = far right)
+  const pt = (score, r) => {
+    const a = Math.PI * (1 - score / 100);
+    return [CX + r * Math.cos(a), CY - r * Math.sin(a)];
+  };
+  const zone = (from, to, cls) => {
+    const [x1, y1] = pt(from, 84), [x2, y2] = pt(to, 84);
+    return `<path class="hs-zone ${cls}" d="M${x1.toFixed(1)} ${y1.toFixed(1)} A84 84 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`;
+  };
+
+  wrap.classList.add('hs-host');
+  wrap.innerHTML = `
+    <div class="hs" data-verdict="WAIT">
+      <div class="hs-tag"><span class="hs-live-dot"></span>Try it live \u2014 drag the slider</div>
+      <svg class="hs-gauge" viewBox="0 0 180 112" fill="none" aria-hidden="true">
+        ${zone(0, 35, 'z-skip')}${zone(35, 65, 'z-wait')}${zone(65, 100, 'z-buy')}
+        <path d="M20 90 A70 70 0 0 1 160 90" class="hs-track" stroke-width="14" stroke-linecap="round"/>
+        <path d="M20 90 A70 70 0 0 1 160 90" class="hs-arc" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="${ARC}" stroke-dashoffset="${ARC}"/>
+        <g class="hs-needle"><line x1="90" y1="90" x2="90" y2="34" stroke-width="3" stroke-linecap="round"/></g>
+        <circle class="hs-hub" cx="90" cy="90" r="7"/>
+      </svg>
+      <div class="hs-verdict" id="hs-verdict">WAIT</div>
+      <div class="hs-score" id="hs-score"></div>
+
+      <div class="hs-price-row"><span>If you buy something for</span><strong id="hs-price"></strong></div>
+      <input class="hs-range" id="hs-range" type="range" min="${MIN}" max="${MAX}" step="${STEP}" value="${START}" aria-label="Purchase price">
+
+      <div class="hs-stats">
+        <div><span>Savings left</span><b id="hs-left"></b></div>
+        <div><span>Goal delayed</span><b id="hs-delay"></b></div>
+      </div>
+      <p class="hs-reason" id="hs-reason"></p>
+    </div>`;
+
+  const sim = wrap.querySelector('.hs');
+  const tag = wrap.querySelector('.hs-tag');
+  const arc = wrap.querySelector('.hs-arc');
+  const needle = wrap.querySelector('.hs-needle');
+  const verdictEl = wrap.querySelector('#hs-verdict');
+  const scoreEl = wrap.querySelector('#hs-score');
+  const priceEl = wrap.querySelector('#hs-price');
+  const leftEl = wrap.querySelector('#hs-left');
+  const delayEl = wrap.querySelector('#hs-delay');
+  const reasonEl = wrap.querySelector('#hs-reason');
+  const range = wrap.querySelector('#hs-range');
+
+  const REASONS = {
+    BUY:  'Fits comfortably \u2014 your safety buffer and goals stay on track.',
+    WAIT: 'Affordable, but it dips into your safety buffer. Waiting or saving more helps.',
+    SKIP: 'Too much of your savings \u2014 this would drain your safety net.'
+  };
+
+  let current = null;
+  function render(price){
+    const score = clamp(Math.round((SAMPLE.savings - price) / SAMPLE.savings * 100), 0, 100);
+    const verdict = score >= 65 ? 'BUY' : score >= 35 ? 'WAIT' : 'SKIP';
+    const months = price / SAMPLE.monthlySaving;
+
+    arc.style.strokeDashoffset = ARC * (1 - score / 100);
+    needle.style.transform = `rotate(${(score - 50) * 1.8}deg)`;
+    range.style.setProperty('--fill', ((price - MIN) / (MAX - MIN) * 100) + '%');
+
+    priceEl.textContent = inr(price);
+    leftEl.textContent = inr(Math.max(0, SAMPLE.savings - price));
+    delayEl.textContent = months < 0.5 ? 'Minimal' : '~' + months.toFixed(1) + ' mo';
+    scoreEl.textContent = 'Affordability ' + score + ' / 100';
+
+    if (verdict !== current){
+      current = verdict;
+      sim.dataset.verdict = verdict;
+      verdictEl.textContent = verdict;
+      reasonEl.textContent = REASONS[verdict];
+      verdictEl.classList.remove('pop'); void verdictEl.offsetWidth; verdictEl.classList.add('pop');
+    }
+  }
+
+  render(START);
+
+  // --- user interaction: stops the auto-demo for good ---
+  let demoOn = !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const takeOver = () => {
+    if (!demoOn && tag.dataset.user) return;
+    demoOn = false;
+    tag.dataset.user = '1';
+    tag.lastChild.textContent = 'Your turn \u2014 drag the slider';
+    verdictEl.setAttribute('aria-live', 'polite');
+  };
+  ['pointerdown', 'touchstart', 'keydown'].forEach(ev => range.addEventListener(ev, takeOver, { passive: true }));
+  range.addEventListener('input', () => { takeOver(); render(Number(range.value)); });
+
+  // --- auto-demo: gentle sweep through BUY -> WAIT -> SKIP -> back ---
+  if (!demoOn) return;
+  const stops = [12000, 60000, 92000, 30000, START];
+  const HOLD = 700, MOVE = 1900;
+  let visible = true, idx = 0, phase = 'hold', t = -500, from = START, last = performance.now();
+  new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(wrap);
+  const ease = x => x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+
+  function tick(now){
+    if (!demoOn) return;
+    const dt = Math.min(now - last, 50); last = now;
+    if (visible && !document.hidden){
+      t += dt;
+      if (phase === 'hold' && t >= HOLD){ phase = 'move'; t = 0; }
+      else if (phase === 'move'){
+        const k = clamp(t / MOVE, 0, 1);
+        const v = Math.round((from + (stops[idx] - from) * ease(k)) / STEP) * STEP;
+        range.value = v; render(v);
+        if (k >= 1){ from = stops[idx]; idx = (idx + 1) % stops.length; phase = 'hold'; t = 0; }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+
+// ---------------------------------------------------------------------------
+// FIX: Landing page scroll-reveal.
+// styles.css hides every `.reveal` element (opacity:0) until it also has the
+// `.revealed` class, but nothing ever added that class — so the value cards,
+// "How it works" flow and the CTA band stayed invisible, leaving a blank gap.
+// This observer adds `.revealed` as each element scrolls into view.
+// ---------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  const items = document.querySelectorAll('.reveal');
+  if (!items.length) return;
+
+  // Fallbacks: no IntersectionObserver support, or user prefers reduced motion
+  // -> just show everything immediately so content is never stuck hidden.
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!('IntersectionObserver' in window) || reduceMotion) {
+    items.forEach(el => el.classList.add('revealed'));
+    return;
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      // Also reveal anything already scrolled past (e.g. page reload mid-scroll).
+      if (entry.isIntersecting || entry.boundingClientRect.top < 0) {
+        entry.target.classList.add('revealed');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  // Small stagger for siblings (cards in a row, flow pills) so they cascade in.
+  items.forEach(el => {
+    const siblings = el.parentElement ? [...el.parentElement.children].filter(c => c.classList.contains('reveal')) : [el];
+    const idx = siblings.indexOf(el);
+    if (idx > 0) el.style.transitionDelay = `${Math.min(idx, 5) * 80}ms`;
+    io.observe(el);
+  });
+});
