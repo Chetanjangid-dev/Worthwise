@@ -402,6 +402,62 @@ const ICONS = {
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
 };
 
+/* ============================================================================
+ * COLORFUL ICON SET (inline SVG, no external requests)
+ * Multi-colour flat icons drawn in the style of free sets such as Fluent
+ * Emoji / Flaticon / Icons8 "color" - kept inline so they never break offline.
+ * Use: cIcon('grid', 20)
+ * ========================================================================== */
+const CICONS = {
+  grid: '<rect x="3" y="3" width="8" height="8" rx="2.2" fill="#60A5FA"/><rect x="13" y="3" width="8" height="8" rx="2.2" fill="#F472B6"/><rect x="3" y="13" width="8" height="8" rx="2.2" fill="#FBBF24"/><rect x="13" y="13" width="8" height="8" rx="2.2" fill="#34D399"/>',
+  scan: '<circle cx="10.5" cy="10.5" r="7" fill="#DDD6FE" stroke="#8B5CF6" stroke-width="2.2"/><path d="M8 10.5h5M10.5 8v5" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round"/><path d="m15.8 15.8 5.2 5.2" stroke="#F59E0B" stroke-width="3.2" stroke-linecap="round"/>',
+  list: '<rect x="4" y="4" width="16" height="17" rx="3" fill="#38BDF8"/><rect x="8.5" y="2" width="7" height="4.5" rx="2" fill="#0284C7"/><path d="M8 11.5h8M8 15.5h5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><circle cx="17" cy="16.5" r="3.6" fill="#22C55E"/><path d="m15.4 16.5 1.2 1.2 2-2.3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  target: '<circle cx="12" cy="12" r="9.5" fill="#F87171"/><circle cx="12" cy="12" r="6.6" fill="#FFF"/><circle cx="12" cy="12" r="3.8" fill="#EF4444"/><circle cx="12" cy="12" r="1.4" fill="#FFF"/><path d="m12 12 8.2-8.2M17.5 3.5h3v3" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  sliders: '<rect x="2" y="6" width="20" height="14" rx="3.5" fill="#10B981"/><path d="M2 10a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v.5H2V10Z" fill="#059669"/><rect x="14" y="11.5" width="8" height="5.2" rx="2.6" fill="#FBBF24"/><circle cx="17.3" cy="14.1" r="1.2" fill="#fff"/><rect x="5" y="3" width="11" height="4" rx="2" fill="#6EE7B7"/>',
+  settings: '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="#FB923C" stroke="#EA580C" stroke-width="1"/><circle cx="12" cy="12" r="3.4" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.4"/>',
+  user: '<circle cx="12" cy="8" r="4.5" fill="#FBBF24"/><path d="M3.5 21c0-4.7 3.8-8 8.5-8s8.5 3.3 8.5 8v.5h-17V21Z" fill="#6366F1"/><circle cx="10.4" cy="7.6" r=".8" fill="#78350F"/><circle cx="13.6" cy="7.6" r=".8" fill="#78350F"/>',
+  logout: '<path d="M10 3H6a2.5 2.5 0 0 0-2.5 2.5v13A2.5 2.5 0 0 0 6 21h4" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M11 12h10M17 7.5l4.5 4.5-4.5 4.5" stroke="#F87171" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  income: '<circle cx="12" cy="12" r="10" fill="#FBBF24"/><circle cx="12" cy="12" r="7.6" fill="#FCD34D" stroke="#F59E0B" stroke-width="1"/><path d="M8.5 8h7M8.5 11h7M10 8c3.3 0 4.6 1.4 4.6 2.8S13.3 13.6 10 13.6l4.6 4" stroke="#92400E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  expense: '<rect x="2" y="5" width="20" height="14" rx="3" fill="#F87171"/><rect x="2" y="9" width="20" height="3.4" fill="#7F1D1D"/><rect x="5" y="15" width="6" height="2" rx="1" fill="#FECACA"/><circle cx="18" cy="16" r="1.4" fill="#FCA5A5"/>',
+  surplus: '<rect x="3" y="14" width="4" height="7" rx="1.2" fill="#86EFAC"/><rect x="10" y="10" width="4" height="11" rx="1.2" fill="#4ADE80"/><rect x="17" y="6" width="4" height="15" rx="1.2" fill="#16A34A"/><path d="m3 9 5-4.5 3.5 2.8L18 2.5" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14.5 2.3H18.3v3.8" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  savings: '<path d="M12 2 2.5 7.5h19L12 2Z" fill="#818CF8"/><rect x="4.5" y="9.5" width="3" height="8" rx="1" fill="#C7D2FE"/><rect x="10.5" y="9.5" width="3" height="8" rx="1" fill="#C7D2FE"/><rect x="16.5" y="9.5" width="3" height="8" rx="1" fill="#C7D2FE"/><rect x="2.5" y="18.5" width="19" height="3" rx="1.2" fill="#6366F1"/><circle cx="12" cy="5.6" r="1.1" fill="#FBBF24"/>',
+  shield: '<path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3Z" fill="#34D399"/><path d="M12 2v20c4.5-2.5 8-6 8-11V5l-8-3Z" fill="#10B981"/><path d="m8.6 11.8 2.5 2.5 4.5-4.8" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  laptop: '<rect x="4" y="4" width="16" height="11" rx="2" fill="#60A5FA"/><rect x="6" y="6" width="12" height="7" rx="1" fill="#DBEAFE"/><path d="M2 18h20l-1.4-3H3.4L2 18Z" fill="#94A3B8"/><rect x="2" y="18" width="20" height="2" rx="1" fill="#64748B"/>',
+  plane: '<path d="M21.5 2.5 2.5 10l7 2.5 2.5 7 9.5-17Z" fill="#38BDF8"/><path d="M21.5 2.5 9.5 12.5l.4 4.2L12 19.5l9.5-17Z" fill="#0EA5E9"/><path d="m9.5 12.5 12-10" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>',
+  book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z" fill="#F59E0B"/><path d="M20 19H6.5A2.5 2.5 0 0 0 4 21.5H20V19Z" fill="#FEF3C7"/><rect x="8" y="5.5" width="8" height="2.2" rx="1.1" fill="#FEF3C7"/><rect x="8" y="9.5" width="6" height="2" rx="1" fill="#FDE68A"/>',
+  electronics: '<rect x="2.5" y="3.5" width="19" height="13" rx="2.2" fill="#A78BFA"/><rect x="4.5" y="5.5" width="15" height="9" rx="1" fill="#EDE9FE"/><path d="m8 12 2.6-3 2 2 1.8-1.6L17 12" stroke="#8B5CF6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="10.5" y="16.5" width="3" height="3" fill="#7C3AED"/><rect x="7" y="19.5" width="10" height="2" rx="1" fill="#6D28D9"/>',
+  fitness: '<rect x="2" y="9" width="3" height="6" rx="1.2" fill="#F87171"/><rect x="5" y="6.5" width="3.5" height="11" rx="1.5" fill="#EF4444"/><rect x="8.5" y="10.8" width="7" height="2.4" fill="#94A3B8"/><rect x="15.5" y="6.5" width="3.5" height="11" rx="1.5" fill="#EF4444"/><rect x="19" y="9" width="3" height="6" rx="1.2" fill="#F87171"/>',
+  headphones: '<path d="M4 15v-3a8 8 0 0 1 16 0v3" stroke="#EC4899" stroke-width="2.4" stroke-linecap="round" fill="none"/><rect x="2.5" y="13.5" width="5" height="8" rx="2.2" fill="#F472B6"/><rect x="16.5" y="13.5" width="5" height="8" rx="2.2" fill="#F472B6"/><rect x="4" y="15.5" width="2" height="4" rx="1" fill="#BE185D"/><rect x="18" y="15.5" width="2" height="4" rx="1" fill="#BE185D"/>',
+  plus: '<circle cx="12" cy="12" r="10" fill="#2FD196"/><path d="M12 7v10M7 12h10" stroke="#06281C" stroke-width="2.4" stroke-linecap="round"/>',
+};
+// Icons loaded directly from the Flaticon CDN (credits are in the landing-page footer).
+// Any name not listed here falls back to the built-in colorful SVG in CICONS.
+const IMG_ICONS = {
+  grid: 'https://cdn-icons-png.flaticon.com/512/10397/10397171.png',
+  scan: 'https://cdn-icons-png.flaticon.com/512/2586/2586879.png',
+  list: 'https://cdn-icons-png.flaticon.com/512/11689/11689173.png',
+  target: 'https://cdn-icons-png.flaticon.com/512/860/860511.png',
+  settings: 'https://cdn-icons-png.flaticon.com/512/1790/1790042.png',
+  logout: 'https://cdn-icons-png.flaticon.com/512/10309/10309341.png',
+  income: 'https://cdn-icons-png.flaticon.com/512/2806/2806360.png',
+  expense: 'https://cdn-icons-png.flaticon.com/512/18558/18558197.png',
+  savings: 'https://cdn-icons-png.flaticon.com/512/584/584052.png',
+  user: 'https://cdn-icons-png.flaticon.com/512/3135/3135768.png',
+  sliders: 'https://cdn-icons-png.flaticon.com/512/3135/3135768.png',
+  surplus: 'https://cdn-icons-png.flaticon.com/512/2285/2285545.png',
+  shield: 'https://cdn-icons-png.flaticon.com/512/595/595764.png',
+  laptop: 'https://cdn-icons-png.flaticon.com/512/428/428001.png',
+  plane: 'https://cdn-icons-png.flaticon.com/512/2831/2831972.png',
+  book: 'https://cdn-icons-png.flaticon.com/512/3389/3389081.png',
+  electronics: 'https://cdn-icons-png.flaticon.com/512/900/900618.png',
+  fitness: 'https://cdn-icons-png.flaticon.com/512/7198/7198839.png',
+  headphones: 'https://cdn-icons-png.flaticon.com/512/6190/6190871.png',
+};
+function cIcon(name, size = 20){
+  if (IMG_ICONS[name]) return `<img class="cicon cicon-img cicon-${name}" src="${IMG_ICONS[name]}" width="${size}" height="${size}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+  return `<svg class="cicon cicon-${name}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${CICONS[name] || CICONS.grid}</svg>`;
+}
+
 function logoMarkup(){
   return `
   <div class="logo">
@@ -420,7 +476,7 @@ function sidebarMarkup(activePath){
   const items = NAV_ITEMS.map(item => {
     const isActive = item.scrollTarget ? false : (activeRoute === item.route);
     return `<a class="nav-link${isActive ? ' active' : ''}" href="${item.route}"${item.scrollTarget ? ` data-scroll-target="${item.scrollTarget}"` : ''}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[item.icon]}</svg>
+      ${cIcon(item.icon, 20)}
       ${item.label}
     </a>`;
   }).join('');
@@ -430,7 +486,7 @@ function sidebarMarkup(activePath){
     <nav class="nav-group">${items}</nav>
     <div class="sidebar-spacer"></div>
     <button class="sidebar-cta btn-block" onclick="window.location.hash='#/analyze'">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      ${cIcon('plus', 18)}
       Analyze a Purchase
     </button>
     <div class="health-mini mt-16">
@@ -566,10 +622,10 @@ function renderMobileBottomNav(activeKey){
   nav.setAttribute('aria-label', 'Main navigation');
   nav.innerHTML = BOTTOM_TABS.map(t => `
     <a class="bn-item${activeKey === t.key ? ' active' : ''}" href="${t.route}"${activeKey === t.key ? ' aria-current="page"' : ''}>
-      <span class="bn-ico">${bnSvg(ICONS[t.icon])}</span><span class="bn-label">${t.label}</span>
+      <span class="bn-ico">${cIcon(t.icon, 24)}</span><span class="bn-label">${t.label}</span>
     </a>`).join('') + `
     <button type="button" class="bn-item${accountActive ? ' active' : ''}" id="bn-account" aria-haspopup="dialog" aria-expanded="false">
-      <span class="bn-ico">${bnSvg(EXTRA_ICONS.user)}</span><span class="bn-label">Account</span>
+      <span class="bn-ico">${cIcon('user', 24)}</span><span class="bn-label">Account</span>
     </button>`;
 
   const overlay = document.createElement('div');
@@ -593,14 +649,14 @@ function renderMobileBottomNav(activeKey){
     </div>
     <div class="as-health"><span>Your financial health</span><b><span class="dot"></span> Good</b></div>
     <a class="as-link" href="#/profile">
-      <span class="as-ico as-ico-profile">${bnSvg(ICONS.sliders, 20)}</span>
+      <span class="as-ico as-ico-profile">${cIcon('sliders', 22)}</span>
       <span class="as-link-text"><b>Financial Profile</b><small>Income, expenses, savings &amp; preferences</small></span>
     </a>
     <a class="as-link" href="#/profile?view=settings">
-      <span class="as-ico as-ico-settings">${bnSvg(ICONS.settings, 20)}</span>
+      <span class="as-ico as-ico-settings">${cIcon('settings', 22)}</span>
       <span class="as-link-text"><b>Settings</b><small>Notifications &amp; currency</small></span>
     </a>
-    <button type="button" class="as-logout" id="as-logout">${bnSvg(EXTRA_ICONS.logout, 18)}<span>Logout</span></button>`;
+    <button type="button" class="as-logout" id="as-logout">${cIcon('logout', 20)}<span>Logout</span></button>`;
 
   document.body.append(nav, overlay, sheet);
 
@@ -735,10 +791,10 @@ function renderSnapshot(profile){
   const savingsRate = income > 0 ? Math.round(Math.max(surplus, 0) / income * 100) : 0;
   const emergencyPct = emergencyTarget > 0 ? Math.round(Math.min(savings / emergencyTarget * 100, 999)) : 0;
   const cards = [
-    { title: 'Monthly Income', value: income, icon: ICON.income, indicator: income > 0 ? 'Saved in your profile' : 'Add income in profile', tone: 'flat' },
-    { title: 'Monthly Expenses', value: expenses, icon: ICON.expense, indicator: `${expenseRatio}% of income`, tone: expenseRatio > 80 ? 'down' : 'flat' },
-    { title: 'Available Monthly Surplus', value: surplus, icon: ICON.surplus, indicator: `${savingsRate}% savings rate`, tone: surplus >= 0 ? 'up' : 'down' },
-    { title: 'Current Savings', value: savings, icon: ICON.savings, indicator: emergencyTarget > 0 ? `${emergencyPct}% toward emergency target` : 'Set emergency target', tone: savings >= emergencyTarget ? 'up' : 'flat' },
+    { title: 'Monthly Income', value: income, icon: 'income', indicator: income > 0 ? 'Saved in your profile' : 'Add income in profile', tone: 'flat' },
+    { title: 'Monthly Expenses', value: expenses, icon: 'expense', indicator: `${expenseRatio}% of income`, tone: expenseRatio > 80 ? 'down' : 'flat' },
+    { title: 'Available Monthly Surplus', value: surplus, icon: 'surplus', indicator: `${savingsRate}% savings rate`, tone: surplus >= 0 ? 'up' : 'down' },
+    { title: 'Current Savings', value: savings, icon: 'savings', indicator: emergencyTarget > 0 ? `${emergencyPct}% toward emergency target` : 'Set emergency target', tone: savings >= emergencyTarget ? 'up' : 'flat' },
   ];
 
   const grid = document.getElementById('snapshot-grid');
@@ -746,7 +802,7 @@ function renderSnapshot(profile){
     <div class="snapshot-card fade-up" style="animation-delay:${i*60}ms">
       <div class="top-row">
         <span class="title">${c.title}</span>
-        <span class="icon-wrap">${iconSvg(c.icon, 17)}</span>
+        <span class="icon-wrap">${cIcon(c.icon, 22)}</span>
       </div>
       <div class="value num" data-target="${c.value}">₹0</div>
       <div class="indicator ${c.tone}">
@@ -809,7 +865,7 @@ function renderGoal(goal){
   const pct = goal.targetAmount > 0 ? Math.round(goal.currentAmount / goal.targetAmount * 100) : 0;
   const remaining = goal.targetAmount - goal.currentAmount;
   el.innerHTML = `
-    <div class="goal-icon">${iconSvg(ICON.shield, 19)}</div>
+    <div class="goal-icon">${cIcon('shield', 24)}</div>
     <h2 class="section-title" style="margin-bottom:2px;">${goal.name}</h2>
     <p class="section-sub">Your top priority goal right now</p>
     <div class="goal-amounts">
@@ -830,7 +886,7 @@ function renderGoal(goal){
   `;
 }
 
-const CATEGORY_ICON = { 'Electronics': ICON.electronics, 'Health & Fitness': ICON.fitness };
+const CATEGORY_ICON = { 'Electronics': 'electronics', 'Health & Fitness': 'fitness', 'Audio': 'headphones', 'Travel': 'plane', 'Education': 'book', 'Laptops': 'laptop' };
 
 function renderDecisions(decisions){
   const el = document.getElementById('recent-decisions');
@@ -840,7 +896,7 @@ function renderDecisions(decisions){
   }
   el.innerHTML = decisions.map(d => `
     <div class="decision-row" onclick="window.location.hash='#/decisions?id=${d.purchase.id}'">
-      <div class="cat-icon">${iconSvg(CATEGORY_ICON[d.purchase.category] || ICON.electronics, 17)}</div>
+      <div class="cat-icon">${cIcon(CATEGORY_ICON[d.purchase.category] || 'electronics', 22)}</div>
       <div class="d-main">
         <div class="d-name">${d.purchase.name}</div>
         <div class="d-meta">Analyzed ${Fmt.relativeDays(d.purchase.createdAt)}</div>
@@ -1579,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-  const GOAL_ICONS_MAP = { shield: ICONS.target, laptop: '<rect x="4" y="4" width="16" height="10" rx="1.5"/><path d="M2 18h20l-1.5-3H3.5L2 18Z"/>', plane: '<path d="M12 2 3 14l4-1 2 4 3-6 3 6 2-4 4 1L12 2Z"/>', book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/>' };
+  const GOAL_ICON_NAMES = ['shield','laptop','plane','book','target'];
 
   async function loadGoalsPage(){
     if (!SpendWiseAPI.isAuthenticated()) return;
@@ -1591,7 +1647,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return `
       <div class="card card-hover goal-card fade-up">
         <div class="g-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${GOAL_ICONS_MAP[g.icon] || GOAL_ICONS_MAP.shield}</svg>
+          ${cIcon(GOAL_ICON_NAMES.includes(g.icon) ? g.icon : 'shield', 22)}
         </div>
         <div class="g-name">${g.name}</div>
         <div class="g-priority">${g.priority} priority</div>

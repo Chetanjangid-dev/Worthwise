@@ -1247,3 +1247,42 @@ input[type="range"]::-moz-range-thumb{
 @media (prefers-reduced-motion: reduce){
   .account-sheet, .account-overlay, .bn-ico{ transition:none; }
 }
+
+/* ============================================================================
+   Colorful icons (cIcon) - keep original colours, soft neutral chips behind
+   ========================================================================== */
+.cicon{ display:block; flex-shrink:0; }
+.nav-link .cicon{ opacity:.92; transition: transform .2s var(--ease), opacity .2s var(--ease); }
+.nav-link:hover .cicon{ transform: scale(1.12) rotate(-4deg); opacity:1; }
+.nav-link.active .cicon{ opacity:1; }
+.sidebar-cta .cicon{ display:inline-block; vertical-align:middle; }
+.snapshot-card .icon-wrap,
+.goal-icon,
+.decision-row .cat-icon,
+.goal-card .g-icon{
+  background: rgba(255,255,255,0.06);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.07);
+}
+.goal-icon, .goal-card .g-icon{ width:44px; height:44px; border-radius:12px; }
+.snapshot-card .icon-wrap{ width:40px; height:40px; border-radius:12px; }
+.decision-row .cat-icon{ width:42px; height:42px; border-radius:12px; }
+.snapshot-card:hover .cicon,
+.goal-card:hover .cicon,
+.decision-row:hover .cicon{ transform: scale(1.1); }
+.snapshot-card .cicon, .goal-card .cicon, .decision-row .cicon{ transition: transform .2s var(--ease); }
+.bn-item .cicon{ opacity:.75; transition: opacity .2s var(--ease), transform .2s var(--ease); }
+.bn-item.active .cicon{ opacity:1; transform: scale(1.06); }
+.as-ico-profile{ background: rgba(16,185,129,0.16) !important; }
+.as-ico-settings{ background: rgba(251,146,60,0.16) !important; }
+.as-logout .cicon{ display:inline-block; }
+@media (prefers-reduced-motion: reduce){
+  .cicon, .nav-link .cicon{ transition:none !important; transform:none !important; }
+}
+
+.cicon-img{ object-fit:contain; border-radius:0; }
+
+.nav-link .cicon-img{ width:22px; height:22px; }
+.cicon-img{ image-rendering:auto; }
+
+.value-strip .item .vi{ display:block; width:44px; height:44px; margin-bottom:14px; object-fit:contain; }
+.landing-footer a{ color:inherit; text-decoration:underline; text-underline-offset:2px; }
