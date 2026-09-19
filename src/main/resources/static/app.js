@@ -1168,7 +1168,7 @@ function emptyState(title, body){
         <div class="ai-response-head">
           <span class="badge-ai">🤖 AI take</span>
         </div>
-        <p class="ai-response-text">${(analysis.aiExplanation && analysis.aiExplanation.trim()) ? analysis.aiExplanation : narrative.supportText}</p>
+        <p class="ai-response-text" id="ai-response-text"></p>
       </div>
 
       <div class="card mt-24 fade-up">
@@ -1291,10 +1291,46 @@ function emptyState(title, body){
     renderTimeline(purchase, profile, analysis);
     initSimulator(purchase, profile, goal);
 
+    typewriter(
+      document.getElementById('ai-response-text'),
+      (analysis.aiExplanation && analysis.aiExplanation.trim()) ? analysis.aiExplanation : narrative.supportText
+    );
+
     document.getElementById('save-plan-btn').addEventListener('click', (e) => {
       e.target.textContent = 'Saved ✓';
       e.target.disabled = true;
     });
+  }
+
+  // ChatGPT-style word-by-word typing effect for the AI take.
+  let _typeTimer = null;
+  function typewriter(el, text){
+    if (!el) return;
+    clearTimeout(_typeTimer);
+    text = String(text || '');
+    const words = text.split(/(\s+)/); // keep whitespace tokens
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce){ el.textContent = text; return; }
+    const cursor = document.createElement('span');
+    cursor.className = 'tw-cursor';
+    const textNode = document.createTextNode('');
+    el.textContent = '';
+    el.appendChild(textNode);
+    el.appendChild(cursor);
+    let i = 0;
+    function tick(){
+      if (!el.isConnected) return;
+      if (i >= words.length){
+        setTimeout(() => cursor.remove(), 1200);
+        return;
+      }
+      const w = words[i++];
+      textNode.nodeValue += w;
+      const pause = /[.!?]$/.test(w) ? 260 : /[,;:]$/.test(w) ? 140 : 35 + Math.random() * 45;
+      _typeTimer = setTimeout(tick, pause);
+    }
+    // small "thinking" delay before typing starts
+    _typeTimer = setTimeout(tick, 500);
   }
 
   function renderTimeline(purchase, profile, analysis){
