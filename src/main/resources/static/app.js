@@ -416,6 +416,138 @@ const CICONS = {
   sliders: '<rect x="2" y="6" width="20" height="14" rx="3.5" fill="#10B981"/><path d="M2 10a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v.5H2V10Z" fill="#059669"/><rect x="14" y="11.5" width="8" height="5.2" rx="2.6" fill="#FBBF24"/><circle cx="17.3" cy="14.1" r="1.2" fill="#fff"/><rect x="5" y="3" width="11" height="4" rx="2" fill="#6EE7B7"/>',
   settings: '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="#FB923C" stroke="#EA580C" stroke-width="1"/><circle cx="12" cy="12" r="3.4" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.4"/>',
   user: '<circle cx="12" cy="8" r="4.5" fill="#FBBF24"/><path d="M3.5 21c0-4.7 3.8-8 8.5-8s8.5 3.3 8.5 8v.5h-17V21Z" fill="#6366F1"/><circle cx="10.4" cy="7.6" r=".8" fill="#78350F"/><circle cx="13.6" cy="7.6" r=".8" fill="#78350F"/>',
+  logout: '<path d="M10 3H6a2.5 2.5 0 0 0-2.5 2.5v13A2.5 2.5 0 0 0 6 21h4" stroke="#94A3B8" stroke-width="2.2" stroke-linecapalsList) {
+    const goal = withGoalFallback(goalsList.find((g) => g.id === profile.savingsGoalId) || goalsList[0], profile);
+    return simulate(purchase, profile, goal, { waitMonths: 0, extraSaving: 0, discount: 0 });
+  }
+
+  // Re-runs the engine for arbitrary simulator inputs (used by analyze.js)
+  function simulate(purchase, profile, goal, { waitMonths = 0, extraSaving = 0, discount = 0 }) {
+    goal = withGoalFallback(goal, profile);
+    const monthlySurplus = profile.monthlyIncome - profile.monthlyExpenses;
+    const effectivePrice = Math.max(purchase.price - discount, 0);
+    const savingsAfterPurchase = profile.currentSavings - effectivePrice + monthlySurplus * waitMonths + extraSaving * waitMonths;
+    const surplusAfterPurchase = monthlySurplus - (purchase.monthlyEmi || 0) + (waitMonths > 0 ? extraSaving : 0) - (waitMonths > 0 ? extraSaving : 0);
+    const monthlyAvailableForGoal = monthlySurplus - (purchase.monthlyEmi || 0);
+
+    const remainingForGoal = Math.max(goal.targetAmount - goal.currentAmount, 0);
+    const baselineMonths = monthlySurplus > 0 ? remainingForGoal / monthlySurplus : Infinity;
+    const impactedMonths = (monthlyAvailableForGoal + extraSaving) > 0
+      ? remainingForGoal / (monthlyAvailableForGoal + extraSaving)
+      : Infinity;
+
+    const goalDelayMonthsRaw = (isFinite(impactedMonths) && isFinite(baselineMonths)) ? (impactedMonths - baselineMonths) : 0;
+    const goalDelayMonths = Math.max(Math.round(goalDelayMonthsRaw), 0);
+
+    const bufferRatio = profile.currentSavings > 0 ? savingsAfterPurchase / profile.currentSavings : 0;
+    let decision = "BUY";
+    if (effectivePrice > profile.currentSavings * 0.6 && goalDelayMonths >= 2) decision = "WAIT";
+    if (effectivePrice > profile.currentSavings) decision = "SKIP";
+    if (waitMonths >= 3 || discount >= purchase.price * 0.15) decision = waitMonths > 0 ? "BUY" : decision;
+    if (bufferRatio < 0.1 && waitMonths === 0) decision = "SKIP";
+
+    const addMonths = (dateStr, months) => {
+      const d = new Date(dateStr);
+      d.setMonth(d.getMonth() + months);
+      return d;
+    };
+
+    const purchaseDate = addMonths(new Date().toISOString(), waitMonths);
+    const goalCompletionAfter = addMonths(goal.targetDate, waitMonths > 0 ? Math.max(goalDelayMonths - waitMonths, 0) : goalDelayMonths);
+
+    return {
+      decision,
+      affordability: effectivePrice <= profile.currentSavings ? "AFFORDABLE" : "CONDITIONALLY_AFFORDABLE",
+      estimatedPurchaseDate: purchaseDate.toISOString(),
+      goalCompletionDate: goalCompletionAfter.toISOString(),
+      goalDelayMonths: Math.max(goalDelayMonths - waitMonths, 0),
+      savingsAfterPurchase: Math.round(savingsAfterPurchase),
+      monthlySurplusAfterPurchase: Math.round(monthlyAvailableForGoal + extraSaving),
+    };
+  }
+
+  return { run, simulate };
+})();
+/**
+ * Worthwise — shared shell logic used across every app page.
+ */
+
+const Fmt = {
+  currency(n){
+    const rounded = Math.round(n);
+    return '₹' + rounded.toLocaleString('en-IN');
+  },
+  compactMonth(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  },
+  fullMonth(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  },
+  shortDate(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+  },
+  relativeDays(dateStr){
+    const diff = Math.round((Date.now() - new Date(dateStr).getTime()) / 86400000);
+    if (diff <= 0) return 'today';
+    if (diff === 1) return '1 day ago';
+    if (diff < 7) return `${diff} days ago`;
+    const weeks = Math.round(diff / 7);
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+  }
+};
+
+// Animate a number counting up — used for headline stats.
+function animateCount(el, target, { prefix = '', duration = 900, decimals = 0 } = {}){
+  const start = 0;
+  const startTime = performance.now();
+  function tick(now){
+    const p = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    const val = start + (target - start) * eased;
+    el.textContent = prefix + Math.round(val).toLocaleString('en-IN');
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = prefix + Math.round(target).toLocaleString('en-IN');
+  }
+  requestAnimationFrame(tick);
+}
+
+const NAV_ITEMS = [
+  { href: 'dashboard.html', route: '#/dashboard', label: 'Overview', icon: 'grid' },
+  { href: 'analyze.html', route: '#/analyze', label: 'Analyze Purchase', icon: 'scan' },
+  { href: 'decisions.html', route: '#/decisions', label: 'My Decisions', icon: 'list' },
+  { href: 'goals.html', route: '#/goals', label: 'Goals', icon: 'target' },
+  { href: 'profile.html', route: '#/profile', label: 'Financial Profile', icon: 'sliders' },
+  { href: 'profile.html#settings', route: '#/profile', scrollTarget: 'settings-card', label: 'Settings', icon: 'settings' },
+];
+
+let currentUserCache = { name: 'User', email: '' };
+
+const ICONS = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  scan: '<path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"/><circle cx="12" cy="12" r="3.2"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1.4"/><circle cx="3.5" cy="12" r="1.4"/><circle cx="3.5" cy="18" r="1.4"/>',
+  target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+  sliders: '<path d="M4 6h9M17 6h3M4 12h3M9 12h11M4 18h13M19 18h1"/><circle cx="14" cy="6" r="2"/><circle cx="6" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+};
+
+/* ============================================================================
+ * COLORFUL ICON SET (inline SVG, no external requests)
+ * Multi-colour flat icons drawn in the style of free sets such as Fluent
+ * Emoji / Flaticon / Icons8 "color" - kept inline so they never break offline.
+ * Use: cIcon('grid', 20)
+ * ========================================================================== */
+const CICONS = {
+  grid: '<rect x="3" y="3" width="8" height="8" rx="2.2" fill="#60A5FA"/><rect x="13" y="3" width="8" height="8" rx="2.2" fill="#F472B6"/><rect x="3" y="13" width="8" height="8" rx="2.2" fill="#FBBF24"/><rect x="13" y="13" width="8" height="8" rx="2.2" fill="#34D399"/>',
+  scan: '<circle cx="10.5" cy="10.5" r="7" fill="#DDD6FE" stroke="#8B5CF6" stroke-width="2.2"/><path d="M8 10.5h5M10.5 8v5" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round"/><path d="m15.8 15.8 5.2 5.2" stroke="#F59E0B" stroke-width="3.2" stroke-linecap="round"/>',
+  list: '<rect x="4" y="4" width="16" height="17" rx="3" fill="#38BDF8"/><rect x="8.5" y="2" width="7" height="4.5" rx="2" fill="#0284C7"/><path d="M8 11.5h8M8 15.5h5" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/><circle cx="17" cy="16.5" r="3.6" fill="#22C55E"/><path d="m15.4 16.5 1.2 1.2 2-2.3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  target: '<circle cx="12" cy="12" r="9.5" fill="#F87171"/><circle cx="12" cy="12" r="6.6" fill="#FFF"/><circle cx="12" cy="12" r="3.8" fill="#EF4444"/><circle cx="12" cy="12" r="1.4" fill="#FFF"/><path d="m12 12 8.2-8.2M17.5 3.5h3v3" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  sliders: '<rect x="2" y="6" width="20" height="14" rx="3.5" fill="#10B981"/><path d="M2 10a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v.5H2V10Z" fill="#059669"/><rect x="14" y="11.5" width="8" height="5.2" rx="2.6" fill="#FBBF24"/><circle cx="17.3" cy="14.1" r="1.2" fill="#fff"/><rect x="5" y="3" width="11" height="4" rx="2" fill="#6EE7B7"/>',
+  settings: '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="#FB923C" stroke="#EA580C" stroke-width="1"/><circle cx="12" cy="12" r="3.4" fill="#FFF7ED" stroke="#EA580C" stroke-width="1.4"/>',
+  user: '<circle cx="12" cy="8" r="4.5" fill="#FBBF24"/><path d="M3.5 21c0-4.7 3.8-8 8.5-8s8.5 3.3 8.5 8v.5h-17V21Z" fill="#6366F1"/><circle cx="10.4" cy="7.6" r=".8" fill="#78350F"/><circle cx="13.6" cy="7.6" r=".8" fill="#78350F"/>',
   logout: '<path d="M10 3H6a2.5 2.5 0 0 0-2.5 2.5v13A2.5 2.5 0 0 0 6 21h4" stroke="#94A3B8" stroke-width="2.2" stroke-linecap    savingsGoalId: "",
     existingEmi: 0,
     emergencyFundTarget: 0,
