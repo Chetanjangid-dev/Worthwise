@@ -75,11 +75,11 @@ const SpendWiseAPI = (() => {
     throw new Error('Login required');
   }
 
-  async function authenticate(path, email, password){
+  async function authenticate(path, body){
     const res = await fetch(`${API_BASE}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify(body)
     });
     if (!res.ok) throw new Error((await res.json()).error || 'Authentication failed');
     const data = await res.json();
@@ -154,8 +154,8 @@ const SpendWiseAPI = (() => {
       return await api('/auth/me');
     },
     isAuthenticated,
-    async login(email, password){ return authenticate('/auth/login', email, password); },
-    async register(email, password){ return authenticate('/auth/register', email, password); },
+    async login(email, password){ return authenticate('/auth/login', { email, password }); },
+    async register(email, password, name, gender){ return authenticate('/auth/register', { email, password, name, gender }); },
     logout(){
       authToken = '';
       localStorage.removeItem('spendwise_token');
@@ -740,6 +740,13 @@ function timeGreeting(date = new Date()){
   return 'Good night';
 }
 
+// Salutation based on the user's gender, chosen at registration.
+function genderTitle(gender){
+  if (gender === 'MALE') return 'Mr.';
+  if (gender === 'FEMALE') return 'Ms.';
+  return '';
+}
+
 async function loadDashboard(){
   if (!SpendWiseAPI.isAuthenticated()) return;
   if (!document.getElementById('greeting')) return; // not on the dashboard page
@@ -753,7 +760,9 @@ async function loadDashboard(){
     ]);
 
     currentUserCache = user;
-    document.getElementById('greeting').textContent = `${timeGreeting()}, ${user.name || 'there'}`;
+    const title = genderTitle(user.gender);
+    const who = user.name ? `${title} ${user.name}`.trim() : 'there';
+    document.getElementById('greeting').textContent = `${timeGreeting()}, ${who}`;
     initShell();
 
     renderSnapshot(profile);
@@ -1671,7 +1680,12 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     status.textContent = 'Creating account...';
     try {
-      currentUserCache = await SpendWiseAPI.register(document.getElementById('register-email').value, document.getElementById('register-password').value);
+      currentUserCache = await SpendWiseAPI.register(
+        document.getElementById('register-email').value,
+        document.getElementById('register-password').value,
+        document.getElementById('register-name').value,
+        document.getElementById('register-gender').value
+      );
       window.location.hash = '#/profile';
       window.location.reload();
     } catch (err) {

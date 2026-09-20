@@ -2,6 +2,7 @@ package com.spendwise.service;
 
 import com.spendwise.dto.AuthDtos.*;
 import com.spendwise.entity.*;
+import com.spendwise.model.Enums.Gender;
 import com.spendwise.exception.ApiException;
 import com.spendwise.repository.*;
 import com.spendwise.security.JwtService;
@@ -27,6 +28,12 @@ public class AuthService {
     AppUser user = new AppUser();
     user.setEmail(req.email().toLowerCase());
     user.setPasswordHash(encoder.encode(req.password()));
+    user.setName(req.name().trim());
+    try {
+      user.setGender(Gender.valueOf(req.gender().trim().toUpperCase()));
+    } catch (IllegalArgumentException ex) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "Gender must be MALE, FEMALE or OTHER");
+    }
     users.save(user);
     FinancialProfile profile = new FinancialProfile();
     profile.setUser(user);
@@ -45,7 +52,9 @@ public class AuthService {
     return new AuthResponse(jwt.create(user.getEmail()), toUserResponse(user));
   }
   public static UserResponse toUserResponse(AppUser user) {
-    return new UserResponse(user.getId().toString(), user.getEmail(), localName(user.getEmail()), 0, "Set up profile");
+    String name = user.getName() != null ? user.getName() : localName(user.getEmail());
+    String gender = user.getGender() != null ? user.getGender().name() : null;
+    return new UserResponse(user.getId().toString(), user.getEmail(), name, gender, 0, "Set up profile");
   }
   public static String localName(String email){ return email.split("@")[0]; }
 }

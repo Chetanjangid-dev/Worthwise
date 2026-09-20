@@ -179,6 +179,15 @@
               <h2 class="section-title">Start fresh</h2>
               <p class="section-sub">Create your profile and add your real numbers.</p>
               <form id="register-form">
+                <div class="field"><label>Name</label><input class="input" id="register-name" type="text" required autocomplete="name"></div>
+                <div class="field"><label>Gender</label>
+                  <select class="input" id="register-gender" required>
+                    <option value="" disabled selected>Select gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
                 <div class="field"><label>Email</label><input class="input" id="register-email" type="email" required autocomplete="email"></div>
                 <div class="field"><label>Password</label><input class="input" id="register-password" type="password" minlength="8" required autocomplete="new-password"></div>
                 <button class="btn btn-primary btn-block btn-get-started" type="submit">Create account</button>

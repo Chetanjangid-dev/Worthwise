@@ -3,6 +3,7 @@ package com.spendwise.model;
 public final class Enums {
   private Enums() {}
 
+  public enum Gender { MALE, FEMALE, OTHER }
   public enum Decision { BUY_NOW, WAIT, DONT_BUY, CONSIDER_ALTERNATIVE }
   public enum PurchaseType { ONE_TIME, EMI }
   public enum Priority { LOW, MEDIUM, HIGH }
