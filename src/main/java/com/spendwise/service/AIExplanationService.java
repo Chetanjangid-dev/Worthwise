@@ -52,7 +52,8 @@ public class AIExplanationService {
           + "Use their real numbers (product name, price, their income/savings, wait time, cheaper option) "
           + "but never mention field names, enum values, scores, or anything technical.";
 
-      String systemPrompt = """
+  
+        String systemPrompt = """
           You are a warm, friendly money buddy inside a personal finance app called SpendWise. \
           You talk directly to the user ("you", "your") like a supportive friend chatting on WhatsApp, \
           the way ChatGPT would reply: natural, human, encouraging, never robotic.

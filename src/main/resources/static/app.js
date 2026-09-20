@@ -731,6 +731,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Greeting based on the user's current local (device) time.
+function timeGreeting(date = new Date()){
+  const h = date.getHours();
+  if (h >= 5 && h < 12) return 'Good morning';
+  if (h >= 12 && h < 17) return 'Good afternoon';
+  if (h >= 17 && h < 21) return 'Good evening';
+  return 'Good night';
+}
+
 async function loadDashboard(){
   if (!SpendWiseAPI.isAuthenticated()) return;
   if (!document.getElementById('greeting')) return; // not on the dashboard page
@@ -744,7 +753,7 @@ async function loadDashboard(){
     ]);
 
     currentUserCache = user;
-    document.getElementById('greeting').textContent = `Good morning, ${user.name || 'there'}`;
+    document.getElementById('greeting').textContent = `${timeGreeting()}, ${user.name || 'there'}`;
     initShell();
 
     renderSnapshot(profile);
