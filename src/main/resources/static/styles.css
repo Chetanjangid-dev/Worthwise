@@ -20,11 +20,11 @@
   --ink-faint:     #656E78;
 
   /* -- brand -- */
-  --pine:          #FF7A1A;
-  --pine-dark:     #4A2A0F;
-  --pine-soft:     rgba(255,122,26,0.14);
-  --indigo:        #FFB443;
-  --indigo-soft:   rgba(255,180,67,0.16);
+  --pine:          #22C08A;
+  --pine-dark:     #0F3D2E;
+  --pine-soft:     rgba(34,192,138,0.14);
+  --indigo:        #8A93FF;
+  --indigo-soft:   rgba(138,147,255,0.16);
 
   /* -- decision semantics -- */
   --buy:           #2FD196;
@@ -48,7 +48,7 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.35), 0 1px 1px rgba(0,0,0,0.25);
   --shadow-md: 0 8px 24px rgba(0,0,0,0.45);
   --shadow-lg: 0 20px 60px rgba(0,0,0,0.55);
-  --glow-pine: 0 0 0 1px rgba(255,122,26,0.35), 0 0 24px rgba(255,122,26,0.25);
+  --glow-pine: 0 0 0 1px rgba(34,192,138,0.35), 0 0 24px rgba(34,192,138,0.25);
   --ease: cubic-bezier(.4,0,.2,1);
 
   --sidebar-w: 264px;
@@ -61,10 +61,10 @@
 
   /* -- theme-dependent decorative accents -- */
   --logo-grad-a:   #FFFFFF;
-  --logo-grad-b:   #FFD9A8;
-  --logo-mark-glow: 0 0 8px rgba(255,122,26,0.45);
-  --progress-end:  #E85D00;
-  --btn-cta-glow:  0 0 0 1px rgba(255,122,26,0.5), 0 0 34px rgba(255,122,26,0.4);
+  --logo-grad-b:   #C9F5E3;
+  --logo-mark-glow: 0 0 8px rgba(34,192,138,0.45);
+  --progress-end:  #1B9E75;
+  --btn-cta-glow:  0 0 0 1px rgba(34,192,138,0.5), 0 0 34px rgba(34,192,138,0.4);
 }
 
 html[data-theme="light"]{
@@ -783,11 +783,38 @@ input[type="range"]::-moz-range-thumb{
     background: var(--pine-dark); border-radius: 26px; padding: 60px 40px; text-align:center; color:#fff;
   }
   .cta-inner h2{ font-size: 30px; color:#fff; margin-bottom:10px; }
-  .cta-inner p{ color: #FFE1C2; margin-bottom: 26px; }
+  .cta-inner p{ color: #C9E4D8; margin-bottom: 26px; }
   .cta-inner .btn-primary{ background:#fff; color: var(--pine-dark); }
-  .cta-inner .btn-primary:hover{ background:#FFF3E8; }
+  .cta-inner .btn-primary:hover{ background:#EFF7F2; }
 
   .landing-footer{ text-align:center; padding: 30px; color: var(--ink-faint); font-size:13px; }
+
+  .demo-video-band{
+    max-width: 1180px; margin: 0 auto 90px; padding: 0 32px; text-align:center;
+  }
+  .demo-video-band h2{ font-size: 30px; margin-bottom:8px; }
+  .demo-video-band .sub{ color: var(--ink-muted); font-size:15px; margin-bottom:30px; }
+  .demo-video-frame{
+    position: relative; width:100%; padding-top: 56.25%; /* 16:9 */
+    border-radius: var(--radius-lg); overflow:hidden;
+    border: 1px solid var(--border); box-shadow: var(--shadow-lg); background: var(--surface);
+  }
+  .demo-video-frame iframe{
+    position:absolute; inset:0; width:100%; height:100%; border:0;
+  }
+
+  /* Mobile-recorded video: hidden on desktop by default, shown (and
+     swapped to a portrait 9:16 frame) once the mobile breakpoint hits. */
+  .demo-video-band.demo-video-band-mobile{ display:none; }
+
+  /* Desktop-only: swap to the mobile-recorded video below 760px. */
+  @media (max-width: 760px){
+    .demo-video-band{ display:none; }
+    .demo-video-band.demo-video-band-mobile{
+      display:block; max-width: 420px;
+    }
+    .demo-video-band-mobile .demo-video-frame{ padding-top: 177.78%; /* 9:16 */ }
+  }
 
   @media (max-width: 760px){
     .value-strip{ grid-template-columns: 1fr; }

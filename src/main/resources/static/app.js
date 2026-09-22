@@ -1880,7 +1880,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.textContent = 'Save Changes'; btn.disabled = false;
     }
   });
-  initLiveSimulator();
+  // initLiveSimulator(); // landing-page gauge demo removed
 // goals inline + profile inline + landing inline appended above
 
 // ---------------------------------------------------------------------------
