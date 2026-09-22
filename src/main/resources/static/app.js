@@ -10,6 +10,42 @@
  * Mapping to future endpoints is noted above each function.
  */
 
+// ---- Theme (dark default, light optional, persisted) -------------------
+const ThemeManager = (() => {
+  const STORAGE_KEY = 'worthwise_theme';
+
+  function apply(theme) {
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    document.querySelectorAll('.theme-toggle-label').forEach(el => {
+      el.textContent = theme === 'light' ? 'Dark mode' : 'Light mode';
+    });
+  }
+
+  function current() {
+    return localStorage.getItem(STORAGE_KEY) === 'light' ? 'light' : 'dark';
+  }
+
+  function toggle() {
+    const next = current() === 'light' ? 'dark' : 'light';
+    localStorage.setItem(STORAGE_KEY, next);
+    apply(next);
+  }
+
+  function init() {
+    apply(current());
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.theme-toggle')) toggle();
+    });
+  }
+
+  return { init, apply, current, toggle };
+})();
+document.addEventListener('DOMContentLoaded', ThemeManager.init);
+
 const SpendWiseAPI = (() => {
 
   // ---- Entity: User -------------------------------------------------
@@ -500,6 +536,11 @@ function sidebarMarkup(activePath){
         <div class="pemail">${currentUserCache.email || ''}</div>
       </div>
     </a>
+    <button type="button" id="theme-toggle" class="theme-toggle theme-toggle-sidebar btn-block mt-8" aria-label="Toggle light/dark theme" title="Toggle theme">
+      <span class="theme-toggle-icon icon-sun">☀</span>
+      <span class="theme-toggle-icon icon-moon">☾</span>
+      <span class="theme-toggle-label">Light mode</span>
+    </button>
     <button class="btn btn-ghost btn-block btn-sm mt-8" onclick="SpendWiseAPI.logout()">Logout</button>
   `;
 }

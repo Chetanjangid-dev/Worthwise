@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Worthwise — Think before you spend.</title>
+<script>
+  // Apply saved theme before CSS paints, so there's no flash of the wrong theme.
+  (function(){
+    try {
+      if (localStorage.getItem('worthwise_theme') === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    } catch (e) {}
+  })();
+</script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -25,7 +35,13 @@
     <a href="javascript:void(0)" data-scroll-target="how">How it works</a>
     <a href="javascript:void(0)" data-scroll-target="value">Why Worthwise</a>
   </div>
-  <a href="#/auth" class="btn btn-primary btn-sm btn-get-started">Get Started</a>
+  <div style="display:flex; align-items:center; gap:14px;">
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle light/dark theme" title="Toggle theme">
+      <span class="theme-toggle-icon icon-sun">☀</span>
+      <span class="theme-toggle-icon icon-moon">☾</span>
+    </button>
+    <a href="#/auth" class="btn btn-primary btn-sm btn-get-started">Get Started</a>
+  </div>
 </div>
 
 <section class="hero fade-up">
