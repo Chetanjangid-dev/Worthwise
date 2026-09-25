@@ -1,6 +1,6 @@
 # Worth Wise 
 
-##Try it out 🔗-https://worthwise-snwh.onrender.com/
+##Try it out 🔗- https://worthwise-topaz.vercel.app/
 
 Personal Purchase Decision Engine: a full-stack app that answers, "Should this user buy this product right now?"
 
