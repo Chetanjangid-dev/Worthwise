@@ -24,7 +24,7 @@ public class AuthService {
 
   @Transactional
   public AuthResponse register(RegisterRequest req) {
-    if (users.existsByEmail(req.email())) throw new ApiException(HttpStatus.CONFLICT, "Email already registered");
+    if (users.existsByEmail(req.email())) throw new ApiException(HttpStatus.CONFLICT, "Email already registered plz try a different one");
     AppUser user = new AppUser();
     user.setEmail(req.email().toLowerCase());
     user.setPasswordHash(encoder.encode(req.password()));

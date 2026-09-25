@@ -1,5 +1,4 @@
 package com.spendwise.dto;
-
 import jakarta.validation.constraints.*;
 
 public final class AuthDtos {

@@ -23,7 +23,7 @@ public class SecurityConfig {
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/index.html", "/app.js", "/styles.css", "/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
+            .requestMatchers("/", "/index.html", "/app.js", "/styles.css", "/api/health", "/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
             .anyRequest().authenticated())
         .headers(h -> h.frameOptions(f -> f.disable()))
         .addFilterBefore(jwt, UsernamePasswordAuthenticationFilter.class)
