@@ -11,7 +11,10 @@ public class AuthController {
   private final AuthService auth;
   private final UserContext users;
   public AuthController(AuthService auth, UserContext users){ this.auth = auth; this.users = users; }
-  @PostMapping("/register") AuthResponse register(@Valid @RequestBody RegisterRequest req){ return auth.register(req); }
-  @PostMapping("/login") AuthResponse login(@Valid @RequestBody LoginRequest req){ return auth.login(req); }
-  @GetMapping("/me") UserResponse me(){ return AuthService.toUserResponse(users.currentUser()); }
+  @PostMapping("/register")
+    AuthResponse register(@Valid @RequestBody RegisterRequest req){ return auth.register(req); }
+  @PostMapping("/login") 
+    AuthResponse login(@Valid @RequestBody LoginRequest req){ return auth.login(req); }
+  @GetMapping("/me") 
+    UserResponse me(){ return AuthService.toUserResponse(users.currentUser()); }
 }

@@ -1,5 +1,4 @@
 package com.spendwise.service;
-
 import com.spendwise.dto.AuthDtos.*;
 import com.spendwise.entity.*;
 import com.spendwise.model.Enums.Gender;
@@ -43,12 +42,12 @@ public class AuthService {
 
   public AuthResponse login(LoginRequest req) {
     AppUser user = users.findByEmail(req.email().toLowerCase())
-        .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
-    if (!encoder.matches(req.password(), user.getPasswordHash())) throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "email not found"));
+    if (!encoder.matches(req.password(), user.getPasswordHash())) throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid password");
     return response(user);
   }
 
-  private AuthResponse response(AppUser user) {
+  private AuthResponse response(AppUser user) { 
     return new AuthResponse(jwt.create(user.getEmail()), toUserResponse(user));
   }
   public static UserResponse toUserResponse(AppUser user) {
