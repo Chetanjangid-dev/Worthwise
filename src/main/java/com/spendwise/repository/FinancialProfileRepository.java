@@ -15,6 +15,6 @@ public interface FinancialProfileRepository extends JpaRepository<FinancialProfi
   Optional<FinancialProfile> findByUser(AppUser user);
   @Modifying
   @Transactional
-  @Query("DELETE FROM  financial_profile f WHERE f.user_id = :user")
-     void deleteAllByUserid(@Param("user_id") AppUser user);
+  @Query("DELETE FROM  FinancialProfile f WHERE f.user = :user")
+     void deleteAllByUserid(@Param("user") AppUser user);
 }

@@ -20,6 +20,6 @@ public interface GoalRepository extends JpaRepository<Goal, UUID> {
   Optional<Goal> findByIdAndUser(UUID id, AppUser user);
   @Modifying
   @Transactional
-  @Query("DELETE FROM Goal g WHERE g.user_id = :user")
-     void deleteAllByUserid(@Param("user_id") AppUser user);
+  @Query("DELETE FROM Goal g WHERE g.user = :user")
+     void deleteAllByUserid(@Param("user") AppUser user);
 }
