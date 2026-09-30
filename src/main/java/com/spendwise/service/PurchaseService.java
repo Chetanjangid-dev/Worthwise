@@ -44,10 +44,12 @@ public class PurchaseService {
   public List<DecisionItem> history(AppUser user) {
     return decisions.findByUserOrderByCreatedAtDesc(user).stream().map(this::toItem).toList();
   }
-  public void  deletepurchase(UUID id){
+  @Transactional
+  public void deletepurchase(UUID id){
     AppUser user = users.currentUser();
-    decisions.deletetheitemwiththisisandthisuser(user,id);
-    return ;
+    PurchaseDecision found = decisions.findByIdAndUser(id, user)
+        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Purchase decision not found"));
+    decisions.delete(found);
   }
   public DecisionItem get(AppUser user, UUID id) {
     return decisions.findByIdAndUser(id, user).map(this::toItem).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Purchase decision not found"));
