@@ -101,6 +101,8 @@ const SpendWiseAPI = (() => {
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   // ⚠️ IMPORTANT: replace with your actual Render backend URL (no trailing slash).
   const API_BASE = 'https://worthwise-snwh.onrender.com/api';
+  
+
   let authToken = localStorage.getItem('spendwise_token') || '';
 
   function isAuthenticated(){
