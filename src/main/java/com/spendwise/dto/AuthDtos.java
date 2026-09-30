@@ -6,6 +6,7 @@ public final class AuthDtos {
   public record RegisterRequest(@Email @NotBlank String email, @Size(min = 8) String password,
                                  @NotBlank String name, @NotBlank String gender) {}
   public record LoginRequest(@Email @NotBlank String email, @NotBlank String password) {}
+   public record delRequest( @NotBlank String password) {}
   public record AuthResponse(String token, UserResponse user) {}
   public record UserResponse(String id, String email, String name, String gender, int financialHealthScore, String financialHealthLabel) {}
 }

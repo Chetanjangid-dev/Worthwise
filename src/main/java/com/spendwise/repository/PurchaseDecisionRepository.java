@@ -5,9 +5,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import jakarta.transaction.Transactional;
 public interface PurchaseDecisionRepository extends JpaRepository<PurchaseDecision, UUID> {
   List<PurchaseDecision> findTop20ByUserOrderByCreatedAtDesc(AppUser user);
   List<PurchaseDecision> findByUserOrderByCreatedAtDesc(AppUser user);
   Optional<PurchaseDecision> findByIdAndUser(UUID id, AppUser user);
+    @Modifying
+    @Transactional
+   @Query("DELETE FROM  purchase_decision pd WHERE pd.user_id = :user")
+     void deleteAllByUserid(@Param("user_id") AppUser user);
+
 }

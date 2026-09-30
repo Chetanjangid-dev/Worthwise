@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WorthWise API Performance Tester</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#1c2330;--muted:#5d6778;--line:#e2e6ec;--accent:#2f6fed;--ok:#1a8a4a;--warn:#b26a00;--bad:#c62828;--bar:#2f6fed;--bar2:#9db8f5;--warnbg:#fff4e0;--infobg:#eaf1ff}
+@media (prefers-color-scheme:dark){:root{--bg:#12161d;--card:#1b212b;--text:#e6e9ef;--muted:#9aa5b5;--line:#2c3542;--accent:#6b9bff;--ok:#4cc27f;--warn:#f0b04a;--bad:#ff7a7a;--bar:#6b9bff;--bar2:#3a5288;--warnbg:#3a2f18;--infobg:#1d2a44}}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:0 0 12px}
+.sub{color:var(--muted);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.banner{background:var(--warnbg);border:1px solid var(--warn);color:var(--text);border-radius:10px;padding:10px 14px;margin-bottom:16px}
+.info{background:var(--infobg);border-radius:8px;padding:8px 12px;color:var(--text);margin-top:10px}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
+input[type=number],select{padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text);width:120px;font:inherit}
+button{padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;font:inherit}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{border-color:var(--bad);color:var(--bad)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.modes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.modes label{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px}
+.scroll{overflow-x:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:10px}
+.stat .v{font-size:20px;font-weight:650}.stat .k{font-size:12px;color:var(--muted)}
+.cond{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 16px}
+.cond div span{color:var(--muted)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--muted);margin-left:6px}
+.tag.h{border-color:var(--warn);color:var(--warn)}.tag.m{border-color:var(--bad);color:var(--bad)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.muted{color:var(--muted)}
+.barrow{display:grid;grid-template-columns:230px 1fr 90px;gap:8px;align-items:center;margin:5px 0;font-size:12px}
+.barrow .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{background:var(--bg);border-radius:4px;height:14px;position:relative;overflow:hidden}
+.fill{height:100%;background:var(--bar);position:absolute;left:0;top:0;border-radius:4px}
+.fill.p95{background:var(--bar2)}
+.fill.err{background:var(--bad)}
+.legend{font-size:12px;color:var(--muted);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px;vertical-align:middle}
+#log{font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;max-height:180px;overflow:auto;background:var(--bg);border-radius:6px;padding:8px;white-space:pre-wrap}
+.prog{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:10px}
+.prog div{height:100%;background:var(--accent);width:0}
+.metric{border-left:3px solid var(--accent);padding:6px 12px;margin:8px 0;background:var(--bg);border-radius:0 6px 6px 0}
+details summary{cursor:pointer;color:var(--accent)}
+.eplist td,.eplist th{text-align:left}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>WorthWise API Performance Tester</h1>
+<p class="sub">Local, browser-only smoke &amp; warm-performance testing for the deployed Spring Boot backend. No data leaves this page except requests to your own backend.</p>
+
+<div class="banner"><strong>⚠ This tool is intended for controlled testing of my own API. Do not use high request volumes against production.</strong>
+Requests per endpoint: no fixed limit (you choose). Concurrency max 5. Data-creating endpoints stay capped at 10. A confirmation appears if a run exceeds 700 total requests.</div>
+
+<!-- TEST CONDITIONS -->
+<div class="card">
+  <h2>Test conditions</h2>
+  <div class="cond" id="cond"></div>
+</div>
+
+<!-- TEST ACCOUNT -->
+<div class="card">
+  <h2>Test account</h2>
+  <div id="acct" class="muted"></div>
+  <div class="row" style="margin-top:10px">
+    <button id="btnReset" class="danger">Clear Token / Reset Test Account</button>
+  </div>
+  <div class="info">The account is created automatically (register → login fallback). The JWT is kept in this browser only (localStorage), is never shown in full, and is never included in exports. Data written by the tester goes only to this dedicated test account.</div>
+</div>
+
+<!-- CONFIG -->
+<div class="card">
+  <h2>Run configuration</h2>
+  <div class="modes">
+    <label><input type="radio" name="mode" value="smoke" checked> A. Smoke test (1 request / endpoint)</label>
+    <label><input type="radio" name="mode" value="warm"> B. Warm performance test</label>
+    <label><input type="radio" name="mode" value="selected"> C. Selected endpoints</label>
+  </div>
+  <div class="row">
+    <label>Requests per endpoint (any number)<input type="number" id="nReq" min="1" value="20"></label>
+    <label>Concurrency (1–5)<input type="number" id="nConc" min="1" max="5" value="2"></label>
+    <label>Warm-up requests<input type="number" id="nWarm" value="1" disabled></label>
+    <label style="flex-direction:row;align-items:center;gap:6px;color:var(--text)"><input type="checkbox" id="chkHeavy" checked> Include data-creating endpoints (POST goals, evaluate)</label>
+    <label style="flex-direction:row;align-items:center;gap:6px;color:var(--text)"><input type="checkbox" id="chkClean" checked> Delete goals created by this run afterwards</label>
+  </div>
+  <p class="muted" id="modeHelp" style="margin:10px 0 0"></p>
+
+  <h2 style="margin-top:16px">Endpoint registry <span class="muted" style="font-weight:400">(from the project's controllers)</span></h2>
+  <div class="scroll"><table class="eplist" id="epTable"></table></div>
+
+  <div class="row" style="margin-top:14px">
+    <button id="btnRun" class="primary">Run test</button>
+    <button id="btnStop" disabled>Stop</button>
+    <button id="btnRegister">Manual: test POST /api/auth/register</button>
+    <button id="btnDelete">Manual: test DELETE /api/goals/{id}</button>
+  </div>
+  <div class="prog"><div id="progBar"></div></div>
+  <div class="muted" id="progText" style="margin-top:6px">Idle.</div>
+  <div id="log" style="margin-top:10px"></div>
+</div>
+
+<!-- OVERALL -->
+<div class="card">
+  <h2>Overall</h2>
+  <div class="grid" id="overall"></div>
+  <p class="muted" style="margin:10px 0 0;font-size:12px">Latency statistics use successful (2xx) responses only, measured with performance.now() until the response body is fully read. Percentiles use nearest-rank. With fewer than 100 samples, p99 equals (or is very close to) the maximum. Requests/sec = benchmark requests ÷ wall-clock time of the benchmark phases. Warm-up requests are excluded from every figure below.</p>
+</div>
+
+<!-- TABLE -->
+<div class="card">
+  <h2>Per-endpoint results</h2>
+  <div class="scroll"><table id="resTable"></table></div>
+  <div id="notes" style="margin-top:10px"></div>
+</div>
+
+<!-- CHARTS -->
+<div class="card">
+  <h2>Response time by endpoint</h2>
+  <div class="legend"><i style="background:var(--bar)"></i>average<i style="background:var(--bar2)"></i>p95</div>
+  <div id="chartLat"></div>
+  <h2 style="margin-top:20px">Error rate by endpoint</h2>
+  <div id="chartErr"></div>
+</div>
+
+<!-- RESUME -->
+<div class="card">
+  <h2>Resume-ready metrics</h2>
+  <p class="muted" style="margin-top:0">Measured facts only. Nothing here is a claim; decide for yourself whether a figure is representative.</p>
+  <div id="resume"><span class="muted">Run a warm or selected test to see measured facts.</span></div>
+  <div class="info"><strong>Use this metric only after confirming the test conditions and environment.</strong> Latency here includes your network path to Render (and a CORS preflight on the first request), a free-tier instance, and a single test account with almost no data.</div>
+</div>
+
+<!-- EXPORT -->
+<div class="card">
+  <h2>Export</h2>
+  <div class="row">
+    <button id="btnJson" disabled>Export Results as JSON</button>
+    <button id="btnCsv" disabled>Export Results as CSV</button>
+  </div>
+  <p class="muted" style="margin-bottom:0">Exports contain test conditions and metrics only — never the JWT or password.</p>
+</div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= CONFIG ================= */
+const BACKEND = 'https://worthwise-snwh.onrender.com';
+const TEST_PASSWORD = 'TestPassword123!';
+const LIMITS = { maxReq: Infinity, maxConc: 5, maxTotal: Infinity, warnTotal: 700, timeoutMs: 30000, warmTimeoutMs: 90000, failStreak: 5 };
+const LS_TOKEN = 'ww_perf_token', LS_EMAIL = 'ww_perf_email';
+
+/* ================= ENDPOINT REGISTRY =================
+   Built from the project's controllers (AuthController, ProfileController, DashboardController,
+   GoalController, PurchaseController, HealthController) and DTO records (AuthDtos, ApiDtos).
+   cls: 'auto' = included in automated modes, 'manual' = only via confirmed manual button. */
+const futureDate = () => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0, 10); };
+const ctx = { seedGoalId: null, purchaseId: null, createdGoalIds: [] };
+
+const EPS = [
+  { id: 'health', name: 'Health check', method: 'GET', path: '/api/health', auth: false, expect: 200, cls: 'auto', src: 'HealthController' },
+  { id: 'login', name: 'Login', method: 'POST', path: '/api/auth/login', auth: false, expect: 200, cls: 'auto', src: 'AuthController',
+    body: () => ({ email: S.email, password: TEST_PASSWORD }), note: 'Creates no data; bcrypt password check' },
+  { id: 'register', name: 'Register', method: 'POST', path: '/api/auth/register', auth: false, expect: 200, cls: 'manual', src: 'AuthController',
+    why: 'Creates a permanent new user each call (no delete endpoint exists)' },
+  { id: 'me', name: 'Current user', method: 'GET', path: '/api/auth/me', auth: true, expect: 200, cls: 'auto', src: 'AuthController' },
+  { id: 'profileGet', name: 'Get profile', method: 'GET', path: '/api/profile', auth: true, expect: 200, cls: 'auto', src: 'ProfileController' },
+  { id: 'profilePut', name: 'Update profile', method: 'PUT', path: '/api/profile', auth: true, expect: 200, cls: 'auto', src: 'ProfileController',
+    body: () => ({ monthlyIncome: 60000, currentSavings: 100000, emergencyFundTarget: 180000, expenseBreakdown: { rent: 15000, food: 8000 },
+      existingEmi: 0, riskTolerance: 'MODERATE', savingPriority: 'BALANCED', purchasePreference: 'BALANCED' }),
+    note: 'Idempotent: overwrites the test account profile with identical values' },
+  { id: 'dashboard', name: 'Dashboard', method: 'GET', path: '/api/dashboard', auth: true, expect: 200, cls: 'auto', src: 'DashboardController' },
+  { id: 'goalsList', name: 'List goals', method: 'GET', path: '/api/goals', auth: true, expect: 200, cls: 'auto', src: 'GoalController' },
+  { id: 'goalsCreate', name: 'Create goal', method: 'POST', path: '/api/goals', auth: true, expect: 200, cls: 'auto', heavy: true, maxReq: 10, maxConc: 2, src: 'GoalController',
+    body: () => ({ name: '[PERF-TEST] Sample goal', targetAmount: 50000, currentAmount: 0, targetDate: futureDate(), priority: 'LOW' }),
+    note: 'Creates 1 goal per request (cap 10, concurrency ≤2); goals cleaned up afterwards if enabled' },
+  { id: 'goalsUpdate', name: 'Update goal', method: 'PUT', path: '/api/goals/{id}', auth: true, expect: 200, cls: 'auto', src: 'GoalController', needs: 'seedGoal',
+    resolve: () => '/api/goals/' + ctx.seedGoalId,
+    body: () => ({ name: '[PERF-TEST] Seed goal', targetAmount: 50000, currentAmount: 1000, targetDate: futureDate(), priority: 'LOW' }),
+    note: 'Idempotent update of one tester-created seed goal' },
+  { id: 'goalsDelete', name: 'Delete goal', method: 'DELETE', path: '/api/goals/{id}', auth: true, expect: 200, cls: 'manual', src: 'GoalController',
+    why: 'Destructive — not safe for automated load testing' },
+  { id: 'purchEval', name: 'Evaluate purchase', method: 'POST', path: '/api/purchases/evaluate', auth: true, expect: 200, cls: 'auto', heavy: true, maxReq: 10, maxConc: 1, src: 'PurchaseController',
+    body: () => ({ productName: '[PERF-TEST] Sample item', category: 'Electronics', price: 1000, purchaseType: 'ONE_TIME', monthlyEmi: 0, durationMonths: 1,
+      reason: 'Automated performance test' }),
+    note: 'Saves a decision record each call AND calls the external AI service (cap 10, concurrency 1). No delete endpoint exists, so records remain in the test account' },
+  { id: 'purchHistory', name: 'Purchase history', method: 'GET', path: '/api/purchases/history', auth: true, expect: 200, cls: 'auto', src: 'PurchaseController' },
+  { id: 'purchGet', name: 'Get purchase decision', method: 'GET', path: '/api/purchases/{id}', auth: true, expect: 200, cls: 'auto', src: 'PurchaseController', needs: 'purchase',
+    resolve: () => '/api/purchases/' + ctx.purchaseId, note: 'Uses a decision id from the test account' }
+];
+
+/* ================= STATE ================= */
+const S = { token: '', email: '', running: false, stop: false, abort: null, results: {}, conditions: null, wallTotalMs: 0, done: 0, total: 0 };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const round = (n, d = 1) => (n === null || n === undefined || isNaN(n)) ? null : Math.round(n * 10 ** d) / 10 ** d;
+const fmtMs = (n) => n === null || n === undefined ? '—' : (n >= 1000 ? Math.round(n).toLocaleString() : n.toFixed(n < 10 ? 2 : 0)) + ' ms';
+const log = (m) => { const el = $('log'); el.textContent += `[${new Date().toLocaleTimeString()}] ${m}\n`; el.scrollTop = el.scrollHeight; };
+
+function loadAccount() { try { S.token = localStorage.getItem(LS_TOKEN) || ''; S.email = localStorage.getItem(LS_EMAIL) || ''; } catch (_) {} }
+function saveAccount() { try { S.token ? localStorage.setItem(LS_TOKEN, S.token) : localStorage.removeItem(LS_TOKEN); S.email ? localStorage.setItem(LS_EMAIL, S.email) : localStorage.removeItem(LS_EMAIL); } catch (_) {} }
+function renderAcct() {
+  $('acct').innerHTML = `Email: <strong>${esc(S.email || '(will be generated on first run)')}</strong> &nbsp;·&nbsp; Password: fixed test password &nbsp;·&nbsp; Token: ` +
+    (S.token ? `<span class="ok">present (masked, ${S.token.length} chars)</span>` : '<span class="muted">none yet</span>');
+}
+
+function browserName() {
+  const ua = navigator.userAgent;
+  const m = ua.match(/(Edg|OPR|Chrome|Firefox|Safari)\/([\d.]+)/);
+  if (!m) return ua.slice(0, 60);
+  let n = m[1] === 'Edg' ? 'Edge' : m[1] === 'OPR' ? 'Opera' : m[1];
+  if (n === 'Safari') { const v = ua.match(/Version\/([\d.]+)/); return 'Safari ' + (v ? v[1] : ''); }
+  return n + ' ' + m[2].split('.')[0];
+}
+
+/* ================= HTTP ================= */
+async function doFetch(method, path, { auth = false, body = null, timeout = LIMITS.timeoutMs } = {}) {
+  const headers = {};
+  if (auth && S.token) headers.Authorization = 'Bearer ' + S.token;
+  const opt = { method, headers };
+  if (body !== null && method !== 'GET' && method !== 'DELETE') { headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  const ac = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; ac.abort(); }, timeout);
+  const onAbort = () => ac.abort();
+  if (S.abort) S.abort.signal.addEventListener('abort', onAbort, { once: true });
+  const t0 = performance.now();
+  try {
+    const res = await fetch(BACKEND + path, { ...opt, signal: ac.signal });
+    let text = ''; try { text = await res.text(); } catch (_) {}
+    const ms = performance.now() - t0;
+    let json = null; try { json = JSON.parse(text); } catch (_) {}
+    return { ms, status: res.status, ok: res.status >= 200 && res.status < 300, kind: 'http', json, text: text.slice(0, 200) };
+  } catch (e) {
+    const ms = performance.now() - t0;
+    const kind = timedOut ? 'timeout' : (S.abort && S.abort.signal.aborted ? 'abort' : 'network');
+    return { ms, status: 0, ok: false, kind, json: null, text: '' };
+  } finally {
+    clearTimeout(timer);
+    if (S.abort) S.abort.signal.removeEventListener('abort', onAbort);
+  }
+}
+
+function explain(r, timeout) {
+  if (r.kind === 'timeout') return `Timed out after ${Math.round((timeout || LIMITS.timeoutMs) / 1000)}s — server did not respond in time.`;
+  if (r.kind === 'network') return 'Network/CORS error — the browser blocked or could not complete this request. It cannot be measured from this page; this is NOT evidence the endpoint is slow or broken.';
+  if (r.status === 401) return 'Authentication failed — check the test account or API.';
+  if (r.status === 403) return '403 Forbidden — token was not accepted for this resource.';
+  if (r.status === 404) return '404 Not found — route or resource does not exist.';
+  if (r.status === 409) return '409 Conflict — resource already exists.';
+  if (r.status === 429) return '429 Too many requests — rate limited; lower requests/concurrency.';
+  if (r.status >= 500) return `${r.status} Server error — the backend failed while handling the request.`;
+  if (r.status >= 400) return `${r.status} Client error — request was rejected (likely validation).`;
+  return `Unexpected status ${r.status}.`;
+}
+
+/* ================= AUTH ================= */
+function clearToken() { S.token = ''; S.email = ''; ctx.seedGoalId = null; ctx.purchaseId = null; ctx.createdGoalIds = []; saveAccount(); renderAcct(); }
+
+async function ensureAuth() {
+  if (S.token) {
+    const me = await doFetch('GET', '/api/auth/me', { auth: true, timeout: LIMITS.warmTimeoutMs });
+    if (me.ok) return;
+    if (me.kind !== 'http') throw new Error(explain(me, LIMITS.warmTimeoutMs));
+    log('Stored token rejected (' + me.status + '); re-authenticating.');
+    S.token = ''; saveAccount();
+  }
+  if (!S.email) { S.email = `perf_test_${Date.now()}@example.com`; saveAccount(); }
+  log('Registering test account… (first request may be slow if Render is waking up)');
+  const reg = await doFetch('POST', '/api/auth/register', { body: { email: S.email, password: TEST_PASSWORD, name: 'Perf Test', gender: 'OTHER' }, timeout: LIMITS.warmTimeoutMs });
+  let res = reg;
+  if (!reg.ok) {
+    if (reg.kind !== 'http') throw new Error(explain(reg, LIMITS.warmTimeoutMs));
+    if (reg.status === 409) {
+      log('Account already exists; logging in.');
+      res = await doFetch('POST', '/api/auth/login', { body: { email: S.email, password: TEST_PASSWORD }, timeout: LIMITS.warmTimeoutMs });
+    } else throw new Error(`Registration failed (${reg.status}). ` + (reg.json && reg.json.error ? reg.json.error : explain(reg)));
+  }
+  if (!res.ok || !res.json || !res.json.token) {
+    throw new Error(res.status === 401 ? 'Authentication failed — check the test account or API.' : `Login failed (${res.status}). ${explain(res)}`);
+  }
+  S.token = res.json.token; saveAccount(); renderAcct();
+  log('Test account ready; token stored (masked).');
+}
+
+/* ================= STATS ================= */
+const pct = (sorted, p) => sorted.length ? sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(p / 100 * sorted.length) - 1))] : null;
+function stats(samples) {
+  const okMs = samples.filter((s) => s.ok).map((s) => s.ms).sort((a, b) => a - b);
+  const n = samples.length, okN = okMs.length;
+  return {
+    total: n, success: okN, failed: n - okN, errorRate: n ? (n - okN) / n * 100 : null,
+    min: okN ? okMs[0] : null, max: okN ? okMs[okN - 1] : null,
+    avg: okN ? okMs.reduce((a, b) => a + b, 0) / okN : null,
+    p50: pct(okMs, 50), p90: pct(okMs, 90), p95: pct(okMs, 95), p99: pct(okMs, 99)
+  };
+}
+
+/* ================= TEST RUNNER ================= */
+function epPath(ep) { return ep.resolve ? ep.resolve() : ep.path; }
+function epBody(ep) { return ep.body ? ep.body() : null; }
+
+async function sendEp(ep, timeout) {
+  const r = await doFetch(ep.method, epPath(ep), { auth: ep.auth, body: epBody(ep), timeout });
+  r.ok = r.kind === 'http' && r.status >= 200 && r.status < 300;
+  if (ep.id === 'goalsCreate' && r.ok && r.json && r.json.id) ctx.createdGoalIds.push(r.json.id);
+  return r;
+}
+
+async function setup(ep) {
+  if (ep.needs === 'seedGoal' && !ctx.seedGoalId) {
+    const r = await doFetch('POST', '/api/goals', { auth: true, body: EPS.find((e) => e.id === 'goalsCreate').body() });
+    if (r.ok && r.json && r.json.id) { ctx.seedGoalId = r.json.id; ctx.createdGoalIds.push(r.json.id); }
+    else return 'Setup failed: could not create a seed goal (' + (r.status || r.kind) + ').';
+  }
+  if (ep.needs === 'purchase' && !ctx.purchaseId) {
+    const h = await doFetch('GET', '/api/purchases/history', { auth: true });
+    if (h.ok && Array.isArray(h.json) && h.json.length) ctx.purchaseId = h.json[0].purchase.id;
+    else {
+      const e = await doFetch('POST', '/api/purchases/evaluate', { auth: true, body: EPS.find((x) => x.id === 'purchEval').body(), timeout: LIMITS.warmTimeoutMs });
+      if (e.ok && e.json && e.json.id) ctx.purchaseId = e.json.id;
+      else return 'Setup failed: no purchase decision id available (' + (e.status || e.kind) + ').';
+    }
+  }
+  return null;
+}
+
+function newResult(ep, mode, conc, planned) {
+  return { ep, mode, timestamp: new Date().toISOString(), concurrency: conc, planned, warmup: null, samples: [], wallMs: 0, statusCounts: {}, messages: [], skipped: null, stoppedEarly: false, authFailed: false };
+}
+function tally(res, r) {
+  const key = r.kind === 'http' ? String(r.status) : r.kind;
+  res.statusCounts[key] = (res.statusCounts[key] || 0) + 1;
+}
+
+async function runEndpoint(ep, mode, nReq, conc) {
+  const isSmoke = mode === 'smoke';
+  const n = isSmoke ? 1 : Math.min(nReq, ep.maxReq || LIMITS.maxReq);
+  const c = Math.min(conc, ep.maxConc || LIMITS.maxConc);
+  const res = newResult(ep, mode, isSmoke ? 1 : c, n);
+  S.results[ep.id] = res;
+
+  if (ep.auth && !S.token) { res.skipped = 'No token available.'; return res; }
+  const setupErr = await setup(ep);
+  if (setupErr) { res.skipped = setupErr; return res; }
+
+  const bump = () => { S.done++; progress(ep.name); };
+
+  if (!isSmoke) {
+    // Warm-up request (recorded separately, excluded from metrics)
+    let w = await sendEp(ep, LIMITS.warmTimeoutMs);
+    if (w.kind === 'abort') return res;
+    if (w.status === 401 && ep.auth) {
+      log('401 during warm-up — re-authenticating once.');
+      clearToken(); try { await ensureAuth(); w = await sendEp(ep, LIMITS.warmTimeoutMs); } catch (e) { res.authFailed = true; }
+    }
+    res.warmup = { ms: w.ms, status: w.kind === 'http' ? w.status : w.kind, ok: w.ok };
+    bump();
+    if (w.status === 401) { res.authFailed = true; res.skipped = 'Authentication failed — check the test account or API.'; return res; }
+    if (w.kind === 'network') { res.skipped = explain(w); res.messages.push(res.skipped); return res; }
+  }
+
+  // Benchmark phase
+  let next = 0, streak = 0;
+  const t0 = performance.now();
+  const worker = async () => {
+    while (!S.stop && !res.stoppedEarly) {
+      const k = next++; if (k >= n) return;
+      const r = await sendEp(ep, LIMITS.timeoutMs);
+      if (r.kind === 'abort') return;
+      res.samples.push({ ms: r.ms, ok: r.ok, status: r.status, kind: r.kind });
+      tally(res, r); bump();
+      if (!r.ok) {
+        const m = explain(r);
+        if (!res.messages.includes(m)) res.messages.push(m);
+        if (r.status === 401) res.authFailed = true;
+        streak++;
+        if (streak >= LIMITS.failStreak) { res.stoppedEarly = true; res.messages.push(`Stopped early after ${LIMITS.failStreak} consecutive failures to avoid pointless load.`); }
+      } else streak = 0;
+      if (performance.now() - (S.lastRender || 0) > 400) { S.lastRender = performance.now(); renderAll(); }
+    }
+  };
+  await Promise.all(Array.from({ length: c }, worker));
+  res.wallMs = performance.now() - t0;
+  S.wallTotalMs += res.wallMs;
+  res.stats = stats(res.samples);
+  res.rps = res.wallMs > 0 ? res.samples.length / (res.wallMs / 1000) : null;
+  if (res.samples.length && res.samples.every((s) => s.kind === 'network')) {
+    res.messages.unshift('Not measurable from this page (network/CORS). Latency is not reported.');
+  }
+  return res;
+}
+
+function progress(label) {
+  const pctDone = S.total ? Math.min(100, S.done / S.total * 100) : 0;
+  $('progBar').style.width = pctDone + '%';
+  $('progText').textContent = `${S.done} / ${S.total} requests — ${label || ''}`;
+}
+
+async function run() {
+  if (S.running) return;
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  let nReq = parseInt($('nReq').value, 10), conc = parseInt($('nConc').value, 10);
+  if (isNaN(nReq) || nReq < 1) nReq = 1; if (isNaN(conc) || conc < 1) conc = 1;
+  nReq = Math.min(nReq, LIMITS.maxReq); conc = Math.min(conc, LIMITS.maxConc);
+  $('nReq').value = nReq; $('nConc').value = conc;
+
+  let list;
+  if (mode === 'selected') {
+    list = EPS.filter((e) => e.cls === 'auto' && document.getElementById('sel_' + e.id).checked);
+    if (!list.length) { alert('Select at least one endpoint.'); return; }
+  } else {
+    list = EPS.filter((e) => e.cls === 'auto' && ($('chkHeavy').checked || !e.heavy));
+  }
+  const planned = list.reduce((a, e) => a + (mode === 'smoke' ? 1 : Math.min(nReq, e.maxReq || LIMITS.maxReq) + 1), 0);
+  if (planned > LIMITS.warnTotal && !confirm(`This run will send about ${planned} requests to ${BACKEND}. Large volumes can slow or rate-limit your Render app. Continue?`)) return;
+
+  S.running = true; S.stop = false; S.abort = new AbortController();
+  S.results = {}; S.wallTotalMs = 0; S.done = 0; S.total = planned; ctx.seedGoalId = null; ctx.purchaseId = null; ctx.createdGoalIds = [];
+  $('log').textContent = '';
+  S.conditions = { backendUrl: BACKEND, timestamp: new Date().toISOString(), mode, requestsPerEndpoint: mode === 'smoke' ? 1 : nReq,
+    concurrency: mode === 'smoke' ? 1 : conc, warmupRequests: mode === 'smoke' ? 0 : 1, browser: browserName() };
+  setBusy(true); renderAll();
+  log(`Starting ${mode} run: ${list.length} endpoints, ~${planned} requests.`);
+
+  try {
+    await ensureAuth();
+    for (const ep of list) {
+      if (S.stop) break;
+      log(`→ ${ep.method} ${ep.path}`);
+      const r = await runEndpoint(ep, mode, nReq, conc);
+      if (r.authFailed && !r.samples.some((s) => s.ok)) {
+        log('Authentication failed — check the test account or API.');
+        if (ep.auth) { alert('Authentication failed — check the test account or API.'); break; }
+      }
+      renderAll();
+    }
+  } catch (e) {
+    log('ERROR: ' + e.message);
+    alert(e.message);
+  } finally {
+    if ($('chkClean').checked && ctx.createdGoalIds.length) {
+      log(`Cleaning up ${ctx.createdGoalIds.length} test goal(s) created by this run…`);
+      S.abort = null;
+      for (const id of ctx.createdGoalIds) await doFetch('DELETE', '/api/goals/' + id, { auth: true });
+      ctx.createdGoalIds = []; ctx.seedGoalId = null;
+    }
+    S.running = false; S.abort = null;
+    log(S.stop ? 'Stopped by user.' : 'Run complete.');
+    setBusy(false); renderAll();
+  }
+}
+
+function setBusy(b) {
+  $('btnRun').disabled = b; $('btnStop').disabled = !b; $('btnReset').disabled = b;
+  $('btnRegister').disabled = b; $('btnDelete').disabled = b;
+}
+
+/* ---- manual, confirmed tests ---- */
+async function manualRegister() {
+  if (!confirm('This will create ONE new permanent throwaway account in the database (there is no delete endpoint). Continue?')) return;
+  const ep = EPS.find((e) => e.id === 'register');
+  setBusy(true); S.abort = new AbortController();
+  const email = `perf_test_manual_${Date.now()}@example.com`;
+  const r = await doFetch('POST', ep.path, { body: { email, password: TEST_PASSWORD, name: 'Perf Test', gender: 'OTHER' }, timeout: LIMITS.warmTimeoutMs });
+  r.ok = r.kind === 'http' && r.status === 200;
+  finishManual(ep, r); log(`Manual register: ${r.kind === 'http' ? r.status : r.kind} in ${fmtMs(r.ms)}`);
+}
+async function manualDelete() {
+  if (!confirm('This will create ONE goal in the test account and then DELETE it (a real DELETE call). Continue?')) return;
+  const ep = EPS.find((e) => e.id === 'goalsDelete');
+  try { await ensureAuth(); } catch (e) { alert(e.message); return; }
+  setBusy(true); S.abort = new AbortController();
+  const c = await doFetch('POST', '/api/goals', { auth: true, body: EPS.find((x) => x.id === 'goalsCreate').body() });
+  if (!c.ok || !c.json || !c.json.id) { log('Could not create the temporary goal; DELETE not tested.'); setBusy(false); S.abort = null; return; }
+  const r = await doFetch('DELETE', '/api/goals/' + c.json.id, { auth: true });
+  r.ok = r.kind === 'http' && r.status >= 200 && r.status < 300;
+  finishManual(ep, r); log(`Manual delete: ${r.kind === 'http' ? r.status : r.kind} in ${fmtMs(r.ms)}`);
+}
+function finishManual(ep, r) {
+  const res = newResult(ep, 'manual', 1, 1);
+  res.samples.push({ ms: r.ms, ok: r.ok, status: r.status, kind: r.kind }); tally(res, r);
+  if (!r.ok) res.messages.push(explain(r));
+  res.stats = stats(res.samples); res.wallMs = r.ms; res.rps = null;
+  S.results['manual_' + ep.id] = res;
+  if (!S.conditions) S.conditions = { backendUrl: BACKEND, timestamp: new Date().toISOString(), mode: 'manual', requestsPerEndpoint: 1, concurrency: 1, warmupRequests: 0, browser: browserName() };
+  S.running = false; S.abort = null; setBusy(false); renderAll();
+}
+
+/* ================= RENDER ================= */
+function resultList() { return Object.values(S.results).filter((r) => r.samples.length || r.skipped); }
+function label(r) { return `${r.ep.method} ${r.ep.path}`; }
+
+function renderConditions() {
+  const c = S.conditions;
+  const nReq = c ? c.requestsPerEndpoint : $('nReq').value, conc = c ? c.concurrency : $('nConc').value;
+  const items = [['Backend URL', BACKEND], ['Test timestamp', c ? new Date(c.timestamp).toLocaleString() : 'not run yet'],
+    ['Mode', c ? c.mode : '—'], ['Requests per endpoint', nReq], ['Concurrency', conc],
+    ['Warm-up requests', c ? c.warmupRequests : '1 (warm/selected modes)'], ['Browser', browserName()]];
+  $('cond').innerHTML = items.map(([k, v]) => `<div><span>${k}:</span> <strong>${esc(v)}</strong></div>`).join('');
+}
+
+function renderOverall() {
+  const rs = resultList().filter((r) => r.samples.length);
+  const all = rs.flatMap((r) => r.samples);
+  const st = stats(all);
+  const rps = S.wallTotalMs > 0 ? all.length / (S.wallTotalMs / 1000) : null;
+  const cards = [['Total requests', all.length], ['Successful', st.success], ['Failed', st.failed],
+    ['Error rate', st.errorRate === null ? '—' : st.errorRate.toFixed(1) + '%'], ['Avg latency', fmtMs(st.avg)], ['p50', fmtMs(st.p50)],
+    ['p95', fmtMs(st.p95)], ['p99', fmtMs(st.p99)], ['Requests/sec', rps === null ? '—' : rps.toFixed(2)]];
+  $('overall').innerHTML = cards.map(([k, v]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+}
+
+function renderTable() {
+  const rs = resultList();
+  let h = '<tr><th>Endpoint</th><th>Method</th><th>Requests</th><th>Success</th><th>Errors</th><th>Error %</th><th>Avg</th><th>p50</th><th>p90</th><th>p95</th><th>p99</th><th>Min</th><th>Max</th><th>Req/s</th><th>Warm-up</th><th>Status codes</th></tr>';
+  for (const r of rs) {
+    const s = r.stats || stats(r.samples);
+    const w = r.warmup ? `${fmtMs(r.warmup.ms)} <span class="muted">(${esc(r.warmup.status)})</span>` : '—';
+    const codes = Object.entries(r.statusCounts).map(([k, v]) => `${esc(k)}×${v}`).join(' ') || (r.skipped ? 'skipped' : '—');
+    const tag = r.mode === 'manual' ? '<span class="tag m">manual</span>' : '';
+    h += `<tr><td>${esc(r.ep.name)} <span class="muted">${esc(r.ep.path)}</span>${tag}</td><td>${r.ep.method}</td><td>${s.total}</td><td class="ok">${s.success}</td>` +
+      `<td class="${s.failed ? 'bad' : ''}">${s.failed}</td><td>${s.errorRate === null ? '—' : s.errorRate.toFixed(1) + '%'}</td>` +
+      `<td>${fmtMs(s.avg)}</td><td>${fmtMs(s.p50)}</td><td>${fmtMs(s.p90)}</td><td>${fmtMs(s.p95)}</td><td>${fmtMs(s.p99)}</td><td>${fmtMs(s.min)}</td><td>${fmtMs(s.max)}</td>` +
+      `<td>${r.rps ? r.rps.toFixed(2) : '—'}</td><td>${w}</td><td>${codes}</td></tr>`;
+  }
+  if (!rs.length) h += '<tr><td colspan="16" class="muted" style="text-align:left">No results yet.</td></tr>';
+  $('resTable').innerHTML = h;
+  const notes = rs.filter((r) => r.messages.length || r.skipped);
+  $('notes').innerHTML = notes.map((r) => `<div class="warn" style="margin:4px 0"><strong>${esc(label(r))}</strong>: ${esc(r.skipped || r.messages.join(' '))}</div>`).join('');
+}
+
+function renderCharts() {
+  const rs = resultList().filter((r) => r.samples.length && r.stats && r.stats.success);
+  const maxL = Math.max(1, ...rs.map((r) => r.stats.p95 || 0));
+  $('chartLat').innerHTML = rs.length ? rs.map((r) => `<div class="barrow"><div class="lbl" title="${esc(label(r))}">${esc(label(r))}</div>` +
+    `<div><div class="track"><div class="fill p95" style="width:${(r.stats.p95 / maxL * 100).toFixed(1)}%"></div></div>` +
+    `<div class="track" style="margin-top:3px"><div class="fill" style="width:${(r.stats.avg / maxL * 100).toFixed(1)}%"></div></div></div>` +
+    `<div>${fmtMs(r.stats.avg)} / ${fmtMs(r.stats.p95)}</div></div>`).join('') : '<span class="muted">No data yet.</span>';
+  const er = resultList().filter((r) => r.samples.length && r.stats);
+  $('chartErr').innerHTML = er.length ? er.map((r) => `<div class="barrow"><div class="lbl" title="${esc(label(r))}">${esc(label(r))}</div>` +
+    `<div class="track"><div class="fill err" style="width:${r.stats.errorRate.toFixed(1)}%"></div></div><div>${r.stats.errorRate.toFixed(1)}%</div></div>`).join('') : '<span class="muted">No data yet.</span>';
+}
+
+function renderResume() {
+  const rs = resultList().filter((r) => r.mode !== 'smoke' && r.mode !== 'manual' && r.stats && r.stats.success);
+  if (!rs.length) { $('resume').innerHTML = '<span class="muted">Run a warm or selected test to see measured facts.</span>'; return; }
+  const c = S.conditions;
+  $('resume').innerHTML = rs.map((r) => {
+    const s = r.stats;
+    const small = s.total < 20 ? ' <span class="warn">— small sample (&lt;20 requests); treat with caution</span>' : '';
+    const caveat = r.stoppedEarly ? ' <span class="warn">— run stopped early</span>' : '';
+    return `<div class="metric"><strong>${esc(label(r))}</strong><br>${s.total} requests<br>${s.errorRate.toFixed(1)}% errors<br>average: ${Math.round(s.avg)} ms<br>p95: ${Math.round(s.p95)} ms` +
+      `<br><span class="muted">concurrency ${r.concurrency} · warm-up excluded · ${esc(c.browser)} · ${new Date(r.timestamp).toLocaleDateString()}</span>${small}${caveat}</div>`;
+  }).join('');
+}
+
+function renderAll() { renderConditions(); renderOverall(); renderTable(); renderCharts(); renderResume();
+  const has = resultList().length > 0; $('btnJson').disabled = !has; $('btnCsv').disabled = !has; }
+
+function renderRegistry() {
+  let h = '<tr><th>Select</th><th>Method</th><th>Path</th><th>Name</th><th>Auth</th><th>Body</th><th>Expected</th><th>Automated testing</th></tr>';
+  for (const e of EPS) {
+    const auto = e.cls === 'auto';
+    const tags = e.heavy ? `<span class="tag h">creates data · max ${e.maxReq} req · conc ≤${e.maxConc}</span>` : '';
+    const status = auto ? `Included ${tags}${e.note ? `<div class="muted" style="font-size:12px;white-space:normal;max-width:380px">${esc(e.note)}</div>` : ''}`
+      : `<span class="bad">Excluded — manual only.</span> <span class="muted">${esc(e.why)}</span>`;
+    h += `<tr><td>${auto ? `<input type="checkbox" id="sel_${e.id}" checked disabled>` : '—'}</td><td>${e.method}</td><td>${esc(e.path)}</td><td>${esc(e.name)}</td>` +
+      `<td>${e.auth ? 'JWT' : 'public'}</td><td>${e.body || e.id === 'register' ? 'JSON' : '—'}</td><td>${e.expect}</td><td style="white-space:normal">${status}</td></tr>`;
+  }
+  $('epTable').innerHTML = h;
+}
+
+function updateModeUI() {
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  $('nReq').disabled = mode === 'smoke';
+  $('nConc').disabled = mode === 'smoke';
+  document.querySelectorAll('[id^=sel_]').forEach((cb) => { cb.disabled = mode !== 'selected'; });
+  $('modeHelp').textContent = {
+    smoke: 'Sends 1 request to each included endpoint, no warm-up. Verifies endpoints work and shows status and response time.',
+    warm: '1 warm-up request per endpoint (reported separately), then the configured number of benchmark requests. Metrics use only the benchmark requests.',
+    selected: 'Tick the endpoints to test in the registry below. Same warm-up + benchmark procedure as mode B.'
+  }[mode];
+  renderConditions();
+}
+
+/* ================= EXPORT ================= */
+function exportRows() {
+  return resultList().map((r) => {
+    const s = r.stats || stats(r.samples);
+    return { timestamp: r.timestamp, endpoint: r.ep.name, method: r.ep.method, path: r.ep.path, mode: r.mode, requestCount: s.total, successCount: s.success, failureCount: s.failed,
+      averageMs: round(s.avg, 2), p50Ms: round(s.p50, 2), p90Ms: round(s.p90, 2), p95Ms: round(s.p95, 2), p99Ms: round(s.p99, 2), minMs: round(s.min, 2), maxMs: round(s.max, 2),
+      errorRatePercent: round(s.errorRate, 2), requestsPerSec: round(r.rps, 3), concurrency: r.concurrency, warmupLatencyMs: r.warmup ? round(r.warmup.ms, 2) : null,
+      warmupStatus: r.warmup ? String(r.warmup.status) : null, notes: r.skipped || r.messages.join(' | ') };
+  });
+}
+function download(name, text, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function exportJson() {
+  download(`worthwise-perf-${Date.now()}.json`, JSON.stringify({ tool: 'WorthWise API Performance Tester', conditions: S.conditions, results: exportRows() }, null, 2), 'application/json');
+}
+function exportCsv() {
+  const rows = exportRows(); if (!rows.length) return;
+  const cols = Object.keys(rows[0]);
+  const cell = (v) => { v = v === null || v === undefined ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  download(`worthwise-perf-${Date.now()}.csv`, [cols.join(',')].concat(rows.map((r) => cols.map((c) => cell(r[c])).join(','))).join('\n'), 'text/csv');
+}
+
+/* ================= INIT ================= */
+$('btnRun').onclick = run;
+$('btnStop').onclick = () => { S.stop = true; if (S.abort) S.abort.abort(); log('Stop requested…'); };
+$('btnReset').onclick = () => { if (confirm('Clear the stored token and forget the test account? A new test account will be created on the next run.')) { clearToken(); log('Token cleared; test account reset.'); } };
+$('btnRegister').onclick = manualRegister;
+$('btnDelete').onclick = manualDelete;
+$('btnJson').onclick = exportJson;
+$('btnCsv').onclick = exportCsv;
+document.querySelectorAll('input[name=mode]').forEach((r) => r.addEventListener('change', updateModeUI));
+['nReq', 'nConc'].forEach((id) => $(id).addEventListener('input', renderConditions));
+
+loadAccount(); renderAcct(); renderRegistry(); updateModeUI(); renderAll();
+})();
+</script>
+</body>
+</html>

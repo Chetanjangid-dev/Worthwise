@@ -4,6 +4,8 @@ import com.spendwise.dto.AuthDtos.*;
 import com.spendwise.service.UserContext;
 import com.spendwise.service.AuthService;
 import jakarta.validation.Valid;
+import jakarta.validation.executable.ValidateOnExecution;
+
 import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/api/auth")
@@ -15,6 +17,9 @@ public class AuthController {
     AuthResponse register(@Valid @RequestBody RegisterRequest req){ return auth.register(req); }
   @PostMapping("/login") 
     AuthResponse login(@Valid @RequestBody LoginRequest req){ return auth.login(req); }
-  @GetMapping("/me") 
+  @DeleteMapping("Delete")
+    void deleteacc(@Valid @RequestBody delRequest req ){  auth.deleteacc(req);}
+    @GetMapping("/me") 
     UserResponse me(){ return AuthService.toUserResponse(users.currentUser()); }
-}
+  
+  }

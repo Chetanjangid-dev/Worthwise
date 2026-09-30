@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.spendwise.service.UserContext;
 
 @Service
 public class AuthService {
@@ -17,8 +18,16 @@ public class AuthService {
   private final FinancialProfileRepository profiles;
   private final PasswordEncoder encoder;
   private final JwtService jwt;
-  public AuthService(AppUserRepository users, FinancialProfileRepository profiles, PasswordEncoder encoder, JwtService jwt) {
+  private final FinancialProfileRepository pfp;
+  private  final GoalRepository goals;
+  private  final PurchaseDecisionRepository pds;
+ private  UserContext usercontext;
+  public AuthService(PurchaseDecisionRepository pds, GoalRepository goals,FinancialProfileRepository pfp, AppUserRepository users, FinancialProfileRepository profiles, PasswordEncoder encoder, JwtService jwt,UserContext usercontext) {
     this.users = users; this.profiles = profiles; this.encoder = encoder; this.jwt = jwt;
+    this.usercontext = usercontext;
+    this.pfp =pfp;
+    this.goals=goals;
+    this.pds=pds;
   }
 
   @Transactional
@@ -38,6 +47,22 @@ public class AuthService {
     profile.setUser(user);
     profiles.save(profile);
     return response(user);
+  }
+  @Transactional 
+  public void deleteacc(delRequest req){
+      String password = req.password();
+       //find emil from crr req this willr eturn a whole record Appusereniy
+      AppUser user = usercontext.currentUser();
+      if (!encoder.matches(req.password(), user.getPasswordHash())){ 
+        goals.deleteAllByUserid(user);         
+        pfp.deleteAllByUserid(user);
+        pds.deleteAllByUserid(user);
+        users.delete(user);
+      }
+      else{
+        throw new ApiException(HttpStatus.CONFLICT, "the password is incorrect");
+      }
+     return ;
   }
 
   public AuthResponse login(LoginRequest req) {

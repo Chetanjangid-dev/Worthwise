@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/api/goals")
 public class GoalController {
-  private final UserContext users; private final GoalService goals;
+  private final UserContext users;
+  private final GoalService goals;
   public GoalController(UserContext users, GoalService goals){ this.users = users; this.goals = goals; }
   @GetMapping List<GoalResponse> list(){ return goals.list(users.currentUser()); }
   @PostMapping GoalResponse create(@Valid @RequestBody GoalRequest req){ return goals.create(users.currentUser(), req); }

@@ -90,3 +90,31 @@ There is no seeded account and no mock fallback for signed-in screens. PostgreSQ
 ## Frontend Integration
 
 The existing UI is served from `src/main/resources/static`, so starting Spring Boot is enough to run the API and frontend together.
+
+
+//db schema
+                         users
+                 ┌──────────────────┐
+                 │ id               │
+                 │ email            │
+                 │ password_hash    │
+                 │ name             │
+                 │ gender           │
+                 │ created_at       │
+                 │ updated_at       │
+                 └────────┬─────────┘
+                          │
+             ┌────────────┼──────────────┐
+             │            │              │
+             │            │              │
+             ▼            ▼              ▼
+     financial_profile   goal     purchase_decision
+     ┌──────────────┐   ┌──────┐   ┌─────────────────┐
+     │ id           │   │ id   │   │ id              │
+     │ user_id      │   │user_id│  │ user_id         │
+     │ income       │   │ name │   │ product_name    │
+     │ expenses     │   │amount│   │ price           │
+     │ savings      │   │date  │   │ decision        │
+     │ risk         │   │...   │   │ score           │
+     │ ...          │   └──────┘   │ ...             │
+     └──────────────┘              └─────────────────┘
