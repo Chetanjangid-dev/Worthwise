@@ -9,6 +9,8 @@ import com.spendwise.repository.PurchaseDecisionRepository;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.*;
+
+import org.hibernate.id.uuid.UuidGenerator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +22,10 @@ public class PurchaseService {
   private final GoalService goals;
   private final DecisionEngine engine;
   private final AIExplanationService ai;
-
-  public PurchaseService(PurchaseDecisionRepository decisions, ProfileService profiles, GoalService goals, DecisionEngine engine, AIExplanationService ai) {
+  private  final UserContext users;
+  public PurchaseService(UserContext users,PurchaseDecisionRepository decisions, ProfileService profiles, GoalService goals, DecisionEngine engine, AIExplanationService ai) {
     this.decisions = decisions; this.profiles = profiles; this.goals = goals; this.engine = engine; this.ai = ai;
+    this.users=users;
   }
 
   @Transactional
@@ -40,6 +43,11 @@ public class PurchaseService {
 
   public List<DecisionItem> history(AppUser user) {
     return decisions.findByUserOrderByCreatedAtDesc(user).stream().map(this::toItem).toList();
+  }
+  public void  deletepurchase(UUID id){
+    AppUser user = users.currentUser();
+    decisions.deletetheitemwiththisisandthisuser(user,id);
+    return ;
   }
   public DecisionItem get(AppUser user, UUID id) {
     return decisions.findByIdAndUser(id, user).map(this::toItem).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Purchase decision not found"));

@@ -53,7 +53,7 @@ public class AuthService {
       String password = req.password();
        //find emil from crr req this willr eturn a whole record Appusereniy
       AppUser user = usercontext.currentUser();
-      if (!encoder.matches(req.password(), user.getPasswordHash())){ 
+      if (encoder.matches(req.password(), user.getPasswordHash())){ 
         goals.deleteAllByUserid(user);         
         pfp.deleteAllByUserid(user);
         pds.deleteAllByUserid(user);

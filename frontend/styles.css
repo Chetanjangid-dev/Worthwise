@@ -1379,3 +1379,41 @@ input[type="range"]::-moz-range-thumb{
 
 .value-strip .item .vi{ display:block; width:44px; height:44px; margin-bottom:14px; object-fit:contain; }
 .landing-footer a{ color:inherit; text-decoration:underline; text-underline-offset:2px; }
+/* ---- Delete account / delete decision ---------------------------------- */
+.danger-text{ color: var(--skip) !important; }
+.danger-text:hover{ background: var(--skip-soft) !important; }
+.as-delete{
+  width:100%; margin-top:8px; padding:12px; border-radius: var(--radius-sm);
+  border:1px dashed var(--skip); background:transparent; color: var(--skip);
+  font: inherit; font-size:14px; font-weight:600; cursor:pointer;
+}
+.date-cell{ display:inline-flex; align-items:center; gap:12px; }
+.row-del{
+  border:none; background:transparent; color: var(--ink-faint); cursor:pointer;
+  font-size:15px; line-height:1; padding:6px 8px; border-radius:8px;
+}
+.row-del:hover{ color: var(--skip); background: var(--skip-soft); }
+.dc-meta .row-del{ margin-left:auto; }
+.ww-danger-btn{
+  padding:10px 18px; border-radius: var(--radius-sm); border:1px solid var(--skip);
+  background: var(--skip-soft); color: var(--skip); font: inherit; font-weight:700; cursor:pointer;
+}
+.ww-danger-btn:hover:not(:disabled){ background: var(--skip); color:#fff; }
+.ww-danger-btn:disabled{ opacity:.6; cursor:not-allowed; }
+.ww-modal{
+  position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center;
+  padding:20px; background: rgba(0,0,0,.6); backdrop-filter: blur(3px);
+}
+.ww-modal-card{
+  width:100%; max-width:400px; padding:24px; border-radius:16px;
+  background: var(--surface); color: var(--ink); border:1px solid var(--border-strong);
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+.ww-modal-card h3{ font-size:18px; margin:0 0 8px; }
+.ww-modal-card p{ font-size:14px; line-height:1.55; color: var(--ink-muted); margin:0 0 16px; }
+.ww-modal-input{
+  width:100%; padding:12px 14px; border-radius: var(--radius-sm); border:1px solid var(--border-strong);
+  background: var(--surface-sunk); color: var(--ink); font: inherit; font-size:15px; box-sizing:border-box;
+}
+.ww-modal-err{ min-height:18px; margin-top:8px; font-size:13px; color: var(--skip); }
+.ww-modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }

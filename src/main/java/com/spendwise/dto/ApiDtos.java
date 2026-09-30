@@ -19,7 +19,7 @@ public final class ApiDtos {
       RiskTolerance riskTolerance,
       SavingPriority savingPriority,
       PurchasePreference purchasePreference) {}
-
+ 
   public record ProfileResponse(
       String userId, BigDecimal monthlyIncome, BigDecimal monthlyExpenses,
       Map<String, BigDecimal> expenseBreakdown, BigDecimal currentSavings,

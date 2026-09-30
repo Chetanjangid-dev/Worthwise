@@ -140,10 +140,13 @@ const SpendWiseAPI = (() => {
     }
     if (!res.ok) {
       let msg = 'Request failed';
-      try { msg = (await res.json()).message || (await res.text()) || msg; } catch (_) { try { msg = await res.text(); } catch (__) {} }
+      try { const d = await res.json(); msg = d.error || d.message || msg; } catch (_) {}
       throw new Error(msg);
     }
-    return res.status === 204 ? null : res.json();
+    if (res.status === 204) return null;
+    // DELETE endpoints return an empty 200 body, so don't blindly call res.json()
+    const raw = await res.text();
+    return raw ? JSON.parse(raw) : null;
   }
 
   function toUiDecision(decision){
@@ -252,6 +255,18 @@ const SpendWiseAPI = (() => {
     async getDecision(id) {
       if (!isAuthenticated()) { await delay(80); return null; }
       return adaptDecisionItem(await api(`/purchases/${id}`));
+    },
+
+    // DELETE /api/purchases/{id}
+    async deleteDecision(id) {
+      await api(`/purchases/${id}`, { method: 'DELETE' });
+    },
+
+    // DELETE /api/auth/Delete  (body: { password })
+    async deleteAccount(password) {
+      await api('/auth/Delete', { method: 'DELETE', body: JSON.stringify({ password }) });
+      authToken = '';
+      localStorage.removeItem('spendwise_token');
     },
 
     // GET /api/purchases/planned (derived client-side from history)
@@ -543,6 +558,7 @@ function sidebarMarkup(activePath){
       <span class="theme-toggle-label">Light mode</span>
     </button>
     <button class="btn btn-ghost btn-block btn-sm mt-8" onclick="SpendWiseAPI.logout()">Logout</button>
+    <button class="btn btn-ghost btn-block btn-sm mt-8 danger-text" onclick="openDeleteAccountModal()">Delete account</button>
   `;
 }
 
@@ -649,6 +665,71 @@ function userInitials(user){
   return ini.toUpperCase();
 }
 
+/* ---- Shared confirm modal + delete flows ------------------------------- */
+function wwModal({ title, message, confirmLabel, withPassword, onConfirm }){
+  document.getElementById('ww-modal')?.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'ww-modal';
+  wrap.className = 'ww-modal';
+  wrap.innerHTML = `
+    <div class="ww-modal-card" role="dialog" aria-modal="true" aria-label="${title}">
+      <h3>${title}</h3>
+      <p>${message}</p>
+      ${withPassword ? '<input type="password" class="ww-modal-input" id="ww-modal-pw" placeholder="Enter your password" autocomplete="current-password">' : ''}
+      <div class="ww-modal-err" id="ww-modal-err"></div>
+      <div class="ww-modal-actions">
+        <button type="button" class="btn btn-ghost" id="ww-cancel">Cancel</button>
+        <button type="button" class="ww-danger-btn" id="ww-confirm">${confirmLabel}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  const close = () => wrap.remove();
+  const errEl = wrap.querySelector('#ww-modal-err');
+  const confirmBtn = wrap.querySelector('#ww-confirm');
+  const pwEl = wrap.querySelector('#ww-modal-pw');
+
+  async function submit(){
+    errEl.textContent = '';
+    const password = pwEl ? pwEl.value : undefined;
+    if (withPassword && !password){ errEl.textContent = 'Please enter your password.'; return; }
+    confirmBtn.disabled = true;
+    const oldLabel = confirmBtn.textContent;
+    confirmBtn.textContent = 'Please wait...';
+    try {
+      await onConfirm(password);
+      close();
+    } catch (err) {
+      errEl.textContent = err.message || 'Something went wrong.';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = oldLabel;
+    }
+  }
+
+  wrap.querySelector('#ww-cancel').addEventListener('click', close);
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) close(); });
+  confirmBtn.addEventListener('click', submit);
+  if (pwEl){
+    pwEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+    setTimeout(() => pwEl.focus(), 50);
+  }
+}
+
+function openDeleteAccountModal(){
+  document.getElementById('account-overlay')?.click(); // close mobile sheet if open
+  wwModal({
+    title: 'Delete your account?',
+    message: 'This permanently deletes your account, financial profile, goals and all purchase decisions. This cannot be undone. Enter your password to confirm.',
+    confirmLabel: 'Delete account',
+    withPassword: true,
+    onConfirm: async (password) => {
+      await SpendWiseAPI.deleteAccount(password);
+      window.location.hash = '#/auth';
+      window.location.reload();
+    },
+  });
+}
+
 function removeMobileBottomNav(){
   ['mobile-bottom-nav', 'account-overlay', 'account-sheet'].forEach(id => document.getElementById(id)?.remove());
   document.body.classList.remove('sheet-open');
@@ -698,7 +779,8 @@ function renderMobileBottomNav(activeKey){
       <span class="as-ico as-ico-settings">${cIcon('settings', 22)}</span>
       <span class="as-link-text"><b>Settings</b><small>Notifications &amp; currency</small></span>
     </a>
-    <button type="button" class="as-logout" id="as-logout">${cIcon('logout', 20)}<span>Logout</span></button>`;
+    <button type="button" class="as-logout" id="as-logout">${cIcon('logout', 20)}<span>Logout</span></button>
+    <button type="button" class="as-delete" id="as-delete">Delete account</button>`;
 
   document.body.append(nav, overlay, sheet);
 
@@ -725,6 +807,10 @@ function renderMobileBottomNav(activeKey){
   sheet.querySelector('#as-logout').addEventListener('click', () => {
     closeSheet();
     SpendWiseAPI.logout();
+  });
+  sheet.querySelector('#as-delete').addEventListener('click', () => {
+    closeSheet();
+    openDeleteAccountModal();
   });
 
   // One-time global listeners (Esc to close, close if resized up to desktop).
@@ -1504,7 +1590,7 @@ function emptyState(title, body){
         <td class="prod-name">${d.purchase.name}</td>
         <td class="num">${Fmt.currency(d.purchase.price)}</td>
         <td><span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span></td>
-        <td class="faint">${Fmt.shortDate(d.purchase.createdAt)}</td>
+        <td class="faint"><span class="date-cell">${Fmt.shortDate(d.purchase.createdAt)}<button type="button" class="row-del" title="Delete decision" aria-label="Delete decision" onclick="event.stopPropagation(); SpendWiseDecisions.remove('${d.purchase.id}')">&#128465;</button></span></td>
       </tr>
     `).join('');
 
@@ -1514,7 +1600,7 @@ function emptyState(title, body){
           <span class="dc-name">${d.purchase.name}</span>
           <span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span>
         </div>
-        <div class="dc-meta"><span class="num">${Fmt.currency(d.purchase.price)}</span><span>${Fmt.shortDate(d.purchase.createdAt)}</span></div>
+        <div class="dc-meta"><span class="num">${Fmt.currency(d.purchase.price)}</span><span>${Fmt.shortDate(d.purchase.createdAt)}</span><button type="button" class="row-del" title="Delete decision" aria-label="Delete decision" onclick="event.stopPropagation(); SpendWiseDecisions.remove('${d.purchase.id}')">&#128465;</button></div>
       </div>
     `).join('');
   }
@@ -1541,6 +1627,8 @@ function emptyState(title, body){
       <hr class="divider">
       <h3 style="font-size:15px; margin-bottom:12px;">Action plan</h3>
       ${d.analysis.actionPlan.map(a => `<div class="plan-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><span>${a}</span></div>`).join('')}
+      <hr class="divider">
+      <button type="button" class="ww-danger-btn" onclick="SpendWiseDecisions.remove('${d.purchase.id}')">Delete this decision</button>
     `;
     document.getElementById('detail-modal').style.display = 'flex';
   }
@@ -1551,7 +1639,22 @@ function emptyState(title, body){
     history.replaceState(null, '', window.location.pathname + window.location.search + '#/decisions');
   }
 
-  window.SpendWiseDecisions = { open: openDetail, reinit: init };
+  function removeDecision(id){
+    wwModal({
+      title: 'Delete this decision?',
+      message: 'This removes the purchase analysis from your history. This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        await SpendWiseAPI.deleteDecision(id);
+        allDecisions = allDecisions.filter(d => d.purchase.id !== id);
+        render();
+        const modal = document.getElementById('detail-modal');
+        if (modal && modal.style.display !== 'none') closeModal();
+      },
+    });
+  }
+
+  window.SpendWiseDecisions = { open: openDetail, remove: removeDecision, reinit: init };
   document.addEventListener('DOMContentLoaded', init);
 })();
 /* ------------------------------------------------------------------ *

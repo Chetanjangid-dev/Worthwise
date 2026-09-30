@@ -18,5 +18,8 @@ public interface PurchaseDecisionRepository extends JpaRepository<PurchaseDecisi
     @Transactional
    @Query("DELETE FROM  PurchaseDecision pd WHERE pd.user = :user")
      void deleteAllByUserid(@Param("user") AppUser user);
-
+   @Modifying 
+   @Transactional 
+   @Query("DELETE FROM PurchaseDecision pd WHERE pd.user = :user AND pd.id =:id")
+     void  deletetheitemwiththisisandthisuser(@Param ("user") AppUser user ,@Param ("id") UUID id);
 }
