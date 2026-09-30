@@ -13,6 +13,6 @@ public class GoalController {
   public GoalController(UserContext users, GoalService goals){ this.users = users; this.goals = goals; }
   @GetMapping List<GoalResponse> list(){ return goals.list(users.currentUser()); }
   @PostMapping GoalResponse create(@Valid @RequestBody GoalRequest req){ return goals.create(users.currentUser(), req); }
-  @PutMapping("/{id}") GoalResponse update(@PathVariable UUID id, @Valid @RequestBody GoalRequest req){ return goals.update(users.currentUser(), id, req); }
-  @DeleteMapping("/{id}") void delete(@PathVariable UUID id){ goals.delete(users.currentUser(), id); }
+  @PutMapping("/{id}") GoalResponse update(@PathVariable("id") UUID id, @Valid @RequestBody GoalRequest req){ return goals.update(users.currentUser(), id, req); }
+  @DeleteMapping("/{id}") void delete(@PathVariable("id") UUID id){ goals.delete(users.currentUser(), id); }
 }
