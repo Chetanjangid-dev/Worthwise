@@ -31,15 +31,14 @@ public class DecisionEngine {
     if (surplusAfter.compareTo(BigDecimal.ZERO) <= 0) { codes.add("NO_MONTHLY_SURPLUS_AFTER_PURCHASE"); score -= 20; }
     if (delay >= 2) { codes.add("GOAL_DELAY"); score -= Math.min(20, delay * 5); }
     BigDecimal ratio = surplus.signum() > 0 ? price.divide(surplus, 2, RoundingMode.HALF_UP) : new BigDecimal("99");
-    if (ratio.compareTo(new BigDecimal("2.5")) > 0) { codes.add("HIGH_AFFORDABILITY_RATIO"); score -= 15; }
+    if (ratio.compareTo(new BigDecimal("2.5")) > 0) { codes.add("LOW_AFFORDABILITY"); score -= 15; }
     score = Math.max(0, Math.min(100, score));
 
     // Trivial-purchase bypass: if the price is a negligible sliver of income and it doesn't push
     // savings negative, there's no meaningful financial decision to make here — just approve it.
     boolean isNegligiblePurchase = savingsAfter.signum() >= 0
         && profile.getMonthlyIncome().signum() > 0
-        && price.compareTo(profile.getMonthlyIncome().multiply(new BigDecimal("0.001"))) <= 0
-        && price.compareTo(new BigDecimal("200")) <= 0;
+        && price.compareTo(profile.getMonthlyIncome().multiply(new BigDecimal("0.001"))) <= 0;
 
     Decision decision = isNegligiblePurchase ? Decision.BUY_NOW
         : decide(score, savingsAfter, profile.getEmergencyFundTarget(), delay);

@@ -287,6 +287,11 @@ const SpendWiseAPI = (() => {
         }));
     },
 
+    // GET /api/purchases/revaluate/{id}  (re-runs a saved decision with the current profile)
+    async revaluatePurchase(id) {
+      return adaptAnalysis(await api(`/purchases/revaluate/${id}`));
+    },
+
     // POST /api/purchases/evaluate
     async analyzePurchase(purchaseInput) {
       const payload = {
@@ -1090,6 +1095,7 @@ function emptyState(title, body){
   let currentProfile = null;
   let currentGoal = null;
   let currentAnalysis = null; // baseline (waitMonths=0) analysis object from engine
+  let revaluateId = null;     // set when the wizard was opened from "Re-evaluate" on a saved decision
 
   const step1 = document.getElementById('step-1');
   const step2 = document.getElementById('step-2');
@@ -1118,6 +1124,7 @@ function emptyState(title, body){
   // ---- STEP 1 -> STEP 2 ----
   document.getElementById('purchase-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    revaluateId = null;
     currentPurchase = {
       id: 'p_new_' + Date.now(),
       name: document.getElementById('p-name').value || 'Untitled purchase',
@@ -1159,6 +1166,8 @@ function emptyState(title, body){
   }
 
   document.getElementById('back-to-1').addEventListener('click', () => {
+    if (revaluateId && currentPurchase) prefillStep1(currentPurchase);
+    revaluateId = null; // going back to step 1 means a normal, editable evaluation
     step2.style.display = 'none';
     step1.style.display = 'block';
     setProgress(1);
@@ -1174,7 +1183,20 @@ function emptyState(title, body){
     let apiDone = false;
     const loadingAnimation = runLoadingSequence(() => apiDone);
 
-    const analysisRaw = await SpendWiseAPI.analyzePurchase(currentPurchase);
+    let analysisRaw;
+    try {
+      analysisRaw = revaluateId
+        ? await SpendWiseAPI.revaluatePurchase(revaluateId)
+        : await SpendWiseAPI.analyzePurchase(currentPurchase);
+    } catch (err) {
+      apiDone = true;
+      await loadingAnimation;
+      stepLoading.style.display = 'none';
+      step2.style.display = 'block';
+      setProgress(2);
+      alert(err.message || 'Could not re-evaluate. Please try again.');
+      return;
+    }
     currentAnalysis = analysisRaw;
     apiDone = true;
     await loadingAnimation;
@@ -1188,6 +1210,46 @@ function emptyState(title, body){
     renderResults(currentPurchase, currentProfile, currentGoal, analysisRaw, narrative);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+
+  function prefillStep1(p){
+    document.getElementById('p-name').value = p.name || '';
+    if (p.category) document.getElementById('p-category').value = p.category;
+    document.getElementById('p-price').value = p.price || '';
+    document.getElementById('p-reason').value = p.reason || '';
+    document.getElementById('p-url').value = p.url || '';
+    purchaseType = p.purchaseType || 'ONE_TIME';
+    document.querySelectorAll('#purchase-form .radio-pill[data-type]').forEach(x => x.classList.toggle('active', x.dataset.type === purchaseType));
+    document.getElementById('emi-fields').style.display = purchaseType === 'EMI' ? 'block' : 'none';
+  }
+
+  // Entry point from Decisions -> "Re-evaluate": skips step 1 and lands on
+  // step 2 (profile recap). "Analyze" there then calls the revaluate endpoint
+  // and the usual loading -> results steps follow.
+  async function startRevaluate(purchase){
+    revaluateId = purchase.id;
+    currentPurchase = {
+      id: purchase.id,
+      name: purchase.name,
+      category: purchase.category,
+      price: Number(purchase.price) || 0,
+      purchaseType: purchase.purchaseType || 'ONE_TIME',
+      monthlyEmi: Number(purchase.monthlyEmi) || 0,
+      emiDuration: Number(purchase.durationMonths) || 0,
+      reason: purchase.reason || '',
+      url: purchase.productUrl || '',
+    };
+    currentProfile = await SpendWiseAPI.getFinancialProfile();
+    const goals = await SpendWiseAPI.getGoals();
+    currentGoal = withGoalFallback(goals.find(g => g.id === currentProfile.savingsGoalId) || goals[0], currentProfile);
+    renderRecap(currentProfile);
+    step1.style.display = 'none';
+    stepLoading.style.display = 'none';
+    stepResults.style.display = 'none';
+    step2.style.display = 'block';
+    setProgress(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  window.SpendWiseAnalyze = { startRevaluate };
 
   // Loops through the loading steps and fills the gauge progressively while
   // the real API request is in flight. `isDone()` is checked between steps;
@@ -1630,7 +1692,10 @@ function emptyState(title, body){
       <h3 style="font-size:15px; margin-bottom:12px;">Action plan</h3>
       ${d.analysis.actionPlan.map(a => `<div class="plan-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><span>${a}</span></div>`).join('')}
       <hr class="divider">
-      <button type="button" class="ww-danger-btn" onclick="SpendWiseDecisions.remove('${d.purchase.id}')">Delete this decision</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary" onclick="SpendWiseDecisions.revaluate('${d.purchase.id}')">↻ Re-evaluate</button>
+        <button type="button" class="ww-danger-btn" onclick="SpendWiseDecisions.remove('${d.purchase.id}')">Delete this decision</button>
+      </div>
     `;
     document.getElementById('detail-modal').style.display = 'flex';
   }
@@ -1656,7 +1721,16 @@ function emptyState(title, body){
     });
   }
 
-  window.SpendWiseDecisions = { open: openDetail, remove: removeDecision, reinit: init };
+  function revaluateDecision(id){
+    const d = allDecisions.find(x => x.purchase.id === id);
+    if (!d) return;
+    document.getElementById('detail-modal').style.display = 'none';
+    window.location.hash = '#/analyze';
+    // router shows the analyze view first, then we jump the wizard to step 2
+    setTimeout(() => window.SpendWiseAnalyze && window.SpendWiseAnalyze.startRevaluate(d.purchase), 0);
+  }
+
+  window.SpendWiseDecisions = { open: openDetail, remove: removeDecision, reinit: init, revaluate: revaluateDecision };
   document.addEventListener('DOMContentLoaded', init);
 })();
 /* ------------------------------------------------------------------ *

@@ -40,6 +40,14 @@ public class PurchaseService {
     PurchaseDecision saved = save(user, normalized, calculated, explanation);
     return withId(saved, calculated, explanation);
   }
+    @Transactional 
+    public DecisionResponse revaluate(AppUser user, UUID id) {
+      PurchaseDecision pd = decisions.findByIdAndUser(id, user).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Purchase decision not found"));;
+     String note = " [Re-evaluation of an earlier decision using the updated profile and financial health]";
+     String baseReason = pd.getReason() == null ? "" : pd.getReason().replace(note, "");
+     PurchaseRequest req = new PurchaseRequest(pd.getProductName(), pd.getProductName(), pd.getCategory(), pd.getPrice(), pd.getPurchaseType(), pd.getMonthlyEmi(), pd.getDurationMonths(), baseReason + note, pd.getProductUrl());
+     return  evaluate(user, req);
+    }
 
   public List<DecisionItem> history(AppUser user) {
     return decisions.findByUserOrderByCreatedAtDesc(user).stream().map(this::toItem).toList();
@@ -75,7 +83,8 @@ public class PurchaseService {
         p.getReasonCodes() == null || p.getReasonCodes().isBlank() ? List.of() : List.of(p.getReasonCodes().split(",")),
         List.of(new ReasonResponse("positive", p.getExplanation())), List.of(), List.of(), p.getExplanation());
     return new DecisionItem(new PurchaseSummary(p.getId().toString(), p.getProductName(), p.getCategory(), p.getPrice(), p.getPurchaseType(),
-        p.getReason(), p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate().toString()), r);
+        p.getReason(), p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate().toString(),
+        p.getMonthlyEmi(), p.getDurationMonths(), p.getProductUrl()), r);
   }
   private DecisionResponse withId(PurchaseDecision p, DecisionResponse r, String explanation) {
     return new DecisionResponse(p.getId().toString(), r.decision(), r.score(), r.affordability(), r.financialImpact(), r.goalImpact(),

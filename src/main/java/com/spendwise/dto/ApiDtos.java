@@ -57,6 +57,7 @@ public final class ApiDtos {
   public record AlternativeResponse(String name, BigDecimal price, String impact) {}
   public record DecisionItem(PurchaseSummary purchase, DecisionResponse analysis) {}
   public record PurchaseSummary(String id, String name, String category, BigDecimal price,
-      PurchaseType purchaseType, String reason, String createdAt) {}
+      PurchaseType purchaseType, String reason, String createdAt,
+      BigDecimal monthlyEmi, Integer durationMonths, String productUrl) {}
   public record DashboardResponse(ProfileResponse profile, List<GoalResponse> goals, List<DecisionItem> recentDecisions) {}
 }
