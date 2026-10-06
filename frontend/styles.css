@@ -579,11 +579,11 @@ input[type="range"]::-moz-range-thumb{
 .alt-savings{ margin-top:14px; padding-top:14px; border-top: 1px dashed var(--border); font-size:13.5px; }
 
 /* ---- market research ---- */
-.mr-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,300px)); gap:18px; align-items:stretch; }
+.mr-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:18px; align-items:stretch; }
 .mr-section{ margin-top:20px; }
 .mr-section-title{ font-size:13px; font-weight:700; color:var(--ink-muted); margin-bottom:10px; }
-.mr-card{ display:flex; flex-direction:column; min-height:390px; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; background:var(--surface); }
-.mr-img{ height:170px; background:var(--surface-sunk); display:flex; align-items:center; justify-content:center; padding:10px; }
+.mr-card{ display:flex; flex-direction:column; min-height:0; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; background:var(--surface); }
+.mr-img{ height:clamp(145px, 22vw, 180px); background:var(--surface-sunk); display:flex; align-items:center; justify-content:center; padding:10px; }
 .mr-img img{ width:100%; height:100%; object-fit:contain; }
 .mr-img.mr-noimg::after{ content:'No image'; font-size:12px; color:var(--ink-faint); }
 .mr-body{ padding:16px; display:flex; flex-direction:column; gap:7px; flex:1; }
@@ -678,6 +678,9 @@ input[type="range"]::-moz-range-thumb{
   .snapshot-card .value{ font-size: 21px !important; }
   .page{ padding: 20px 14px 60px; }
   .card{ padding: 16px; }
+  .mr-grid{ grid-template-columns:1fr; gap:14px; }
+  .mr-img{ height:140px; }
+  .mr-body{ padding:14px; }
   .goal-card-featured .progress-track{ margin-top: 10px; }
   .timeline-rail{ padding-left: 20px !important; }
 }
