@@ -22,9 +22,10 @@ public class PurchaseService {
   private final GoalService goals;
   private final DecisionEngine engine;
   private final AIExplanationService ai;
+  private final MarketResearchService research;
   private  final UserContext users;
-  public PurchaseService(UserContext users,PurchaseDecisionRepository decisions, ProfileService profiles, GoalService goals, DecisionEngine engine, AIExplanationService ai) {
-    this.decisions = decisions; this.profiles = profiles; this.goals = goals; this.engine = engine; this.ai = ai;
+  public PurchaseService(UserContext users,PurchaseDecisionRepository decisions, ProfileService profiles, GoalService goals, DecisionEngine engine, AIExplanationService ai, MarketResearchService research) {
+    this.decisions = decisions; this.profiles = profiles; this.goals = goals; this.engine = engine; this.ai = ai; this.research = research;
     this.users=users;
   }
 
@@ -37,8 +38,11 @@ public class PurchaseService {
     FinancialProfile profile = profiles.entity(user);
     DecisionResponse calculated = engine.evaluate(normalized, profile, goals.active(user));
     String explanation = ai.explain(normalized, profiles.toResponse(profile), calculated);
+    // Never throws: returns null if SerpApi is unavailable, so the financial analysis still succeeds.
+    BigDecimal safeMax = calculated.safePriceRange() == null ? null : calculated.safePriceRange().get("max");
+    MarketResearchResponse market = research.research(normalized, safeMax);
     PurchaseDecision saved = save(user, normalized, calculated, explanation);
-    return withId(saved, calculated, explanation);
+    return withId(saved, calculated, explanation, market);
   }
     @Transactional 
     public DecisionResponse revaluate(AppUser user, UUID id) {
@@ -64,7 +68,7 @@ public class PurchaseService {
   }
 
   private PurchaseDecision save(AppUser user, PurchaseRequest req, DecisionResponse r, String explanation) {
-    PurchaseDecision p = new PurchaseDecision();
+    PurchaseDecision p = new PurchaseDecision();//even thodugh we revaute the purchase we will  terta it as new decsion recird 
     p.setUser(user); p.setProductName(req.productName()); p.setCategory(req.category()); p.setPrice(req.price());
     p.setPurchaseType(req.purchaseType()); p.setMonthlyEmi(req.monthlyEmi()); p.setDurationMonths(req.durationMonths());
     p.setReason(req.reason()); p.setProductUrl(req.productUrl()); p.setDecision(Decision.valueOf(r.decision()));
@@ -81,16 +85,16 @@ public class PurchaseService {
         p.getMonthlySurplusBefore(), p.getMonthlySurplusAfterPurchase(), p.getRecommendedWaitMonths(), null, p.getGoalCompletionDate(),
         p.getGoalDelayMonths(), Map.of("min", nz(p.getSafePriceMin()), "max", nz(p.getSafePriceMax())),
         p.getReasonCodes() == null || p.getReasonCodes().isBlank() ? List.of() : List.of(p.getReasonCodes().split(",")),
-        List.of(new ReasonResponse("positive", p.getExplanation())), List.of(), List.of(), p.getExplanation());
+        List.of(new ReasonResponse("positive", p.getExplanation())), List.of(), List.of(), p.getExplanation(), null);
     return new DecisionItem(new PurchaseSummary(p.getId().toString(), p.getProductName(), p.getCategory(), p.getPrice(), p.getPurchaseType(),
         p.getReason(), p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate().toString(),
         p.getMonthlyEmi(), p.getDurationMonths(), p.getProductUrl()), r);
   }
-  private DecisionResponse withId(PurchaseDecision p, DecisionResponse r, String explanation) {
+  private DecisionResponse withId(PurchaseDecision p, DecisionResponse r, String explanation, MarketResearchResponse market) {
     return new DecisionResponse(p.getId().toString(), r.decision(), r.score(), r.affordability(), r.financialImpact(), r.goalImpact(),
         r.purchasePrice(), r.savingsAfterPurchase(), r.emergencyFundTarget(), r.monthlySurplusBefore(), r.monthlySurplusAfterPurchase(),
         r.recommendedWaitMonths(), r.estimatedPurchaseDate(), r.goalCompletionDate(), r.goalDelayMonths(), r.safePriceRange(), r.reasonCodes(),
-        r.reasons(), r.alternatives(), r.actionPlan(), explanation);
+        r.reasons(), r.alternatives(), r.actionPlan(), explanation, market);
   }
   private BigDecimal nz(BigDecimal n){ return n == null ? BigDecimal.ZERO : n; }
 }

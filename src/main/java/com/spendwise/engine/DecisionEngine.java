@@ -57,7 +57,7 @@ public class DecisionEngine {
         delay > 2 ? "HIGH" : ratio.compareTo(BigDecimal.ONE) > 0 ? "MEDIUM" : "LOW",
         delay > 0 ? "MEDIUM" : "LOW", price, savingsAfter, profile.getEmergencyFundTarget(), surplus, surplusAfter,
         wait, purchaseDate, goalDate, delay, Map.of("min", BigDecimal.ZERO, "max", safeMax), codes, reasons, alternatives, plan,
-        fallbackExplanation(decision, wait, safeMax));
+        fallbackExplanation(decision, wait, safeMax), null);
   }
 
   private Decision decide(int score, BigDecimal savingsAfter, BigDecimal emergencyTarget, int delay) {

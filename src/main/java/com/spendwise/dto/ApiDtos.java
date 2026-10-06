@@ -51,7 +51,11 @@ public final class ApiDtos {
       LocalDate estimatedPurchaseDate, LocalDate goalCompletionDate, int goalDelayMonths,
       Map<String, BigDecimal> safePriceRange, List<String> reasonCodes,
       List<ReasonResponse> reasons, List<AlternativeResponse> alternatives,
-      List<String> actionPlan, String aiExplanation) {}
+      List<String> actionPlan, String aiExplanation, MarketResearchResponse marketResearch) {}
+
+  public record MarketResearchResponse(String query, List<MarketResultResponse> results) {}
+  public record MarketResultResponse(String title, String price, BigDecimal extractedPrice, String source,
+      Double rating, Integer reviews, String thumbnail, String link) {}
 
   public record ReasonResponse(String type, String text) {}
   public record AlternativeResponse(String name, BigDecimal price, String impact) {}

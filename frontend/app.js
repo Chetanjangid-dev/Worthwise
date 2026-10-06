@@ -101,6 +101,7 @@ const SpendWiseAPI = (() => {
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   // ⚠️ IMPORTANT: replace with your actual Render backend URL (no trailing slash).
   const API_BASE = 'https://worthwise-snwh.onrender.com/api';
+ // const API_BASE = 'http://localhost:5000/api';
   
 
   let authToken = localStorage.getItem('spendwise_token') || '';
@@ -301,9 +302,9 @@ const SpendWiseAPI = (() => {
         price: purchaseInput.price,
         purchaseType: purchaseInput.purchaseType,
         monthlyEmi: purchaseInput.monthlyEmi || 0,
-        durationMonths: purchaseInput.durationMonths || null,
+        durationMonths: purchaseInput.durationMonths || purchaseInput.emiDuration || null,
         reason: purchaseInput.reason,
-        productUrl: purchaseInput.productUrl,
+        productUrl: purchaseInput.productUrl || purchaseInput.url || null,
       };
       if (!isAuthenticated()) {
         await delay(1600); // simulated engine latency for the loading sequence
@@ -313,6 +314,102 @@ const SpendWiseAPI = (() => {
     },
   };
 })();
+
+// ---- Market research results renderer ------------------------------------
+// Kept outside SpendWiseAPI because the Analyze results UI calls this directly.
+function marketResearchHTML(mr, purchase, analysis){
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const safeUrl = (u) => /^https?:\/\//i.test(String(u || '')) ? String(u) : '';
+  const query = esc((mr && mr.query) || (purchase && purchase.name) || 'this product');
+  const groups = marketResearchGroups(analysis, purchase);
+  const results = [...groups.around, ...groups.cheaper];
+
+  if (!results.length) {
+    return `
+      <div class="card mt-24 fade-up">
+        <h2 class="section-title">Market Research</h2>
+        <p class="section-sub">No online matches found around your entered price or cheaper for &ldquo;${query}&rdquo;.</p>
+      </div>`;
+  }
+
+  const renderCards = (items, label) => items.map(r => {
+    const link = safeUrl(r.link);
+    const img = safeUrl(r.thumbnail);
+    const extractedPrice = Number(r.extractedPrice);
+    const purchasePrice = purchase ? Number(purchase.price) : NaN;
+    const cheaper = Number.isFinite(extractedPrice) && Number.isFinite(purchasePrice) && extractedPrice < purchasePrice;
+    const ratingValue = Number(r.rating);
+    const reviewsValue = Number(r.reviews);
+    const rating = Number.isFinite(ratingValue)
+      ? `<div class="mr-rating">&#9733; ${esc(ratingValue.toFixed(1))}${Number.isFinite(reviewsValue) ? ` <span>(${esc(reviewsValue.toLocaleString('en-IN'))})</span>` : ''}</div>`
+      : '';
+    return `
+      <div class="mr-card">
+        <div class="mr-img${img ? '' : ' mr-noimg'}">${img ? `<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('mr-noimg');this.remove();">` : ''}</div>
+        <div class="mr-body">
+          <div class="mr-tag">${label}</div>
+          <div class="mr-title">${esc(r.title)}</div>
+          ${r.price ? `<div class="mr-price num">${esc(r.price)}${cheaper ? ' <span class="badge badge-buy">Cheaper</span>' : ''}</div>` : ''}
+          ${rating}
+          ${r.source ? `<div class="mr-source">${esc(r.source)}</div>` : ''}
+          ${link ? `<a class="btn btn-secondary btn-sm mr-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">View product</a>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="card mt-24 fade-up">
+      <h2 class="section-title">Market Research</h2>
+      <p class="section-sub">I found online listings around your entered price, plus cheaper options when available.</p>
+      ${groups.around.length ? `
+        <div class="mr-section">
+          <div class="mr-section-title">Around your entered price</div>
+          <div class="mr-grid">${renderCards(groups.around, 'Your price range')}</div>
+        </div>` : ''}
+      ${groups.cheaper.length ? `
+        <div class="mr-section">
+          <div class="mr-section-title">Cheaper options</div>
+          <div class="mr-grid">${renderCards(groups.cheaper, 'Cheaper option')}</div>
+        </div>` : ''}
+    </div>`;
+}
+
+function marketResearchGroups(analysis, purchase){
+  const max = Number(analysis?.safePriceRange?.max);
+  const purchasePrice = Number(purchase?.price);
+  const results = analysis?.marketResearch?.results;
+  if (!Number.isFinite(purchasePrice) || purchasePrice <= 0 || !Array.isArray(results)) return { around: [], cheaper: [] };
+
+  const valid = results
+    .filter(r => r && r.title && Number.isFinite(Number(r.extractedPrice)))
+    .map(r => ({ ...r, _price: Number(r.extractedPrice) }));
+
+  const aroundMin = purchasePrice * 0.75;
+  const aroundMax = purchasePrice * 1.25;
+  const around = valid
+    .filter(r => r._price >= aroundMin && r._price <= aroundMax)
+    .sort((a, b) => Math.abs(a._price - purchasePrice) - Math.abs(b._price - purchasePrice))
+    .slice(0, 1);
+
+  const safeCheapMax = Number.isFinite(max) && max > 0 ? Math.min(max, purchasePrice) : purchasePrice;
+  const aroundIds = new Set(around.map(r => `${r.title}|${r.extractedPrice}|${r.source || ''}`));
+  const cheaper = valid
+    .filter(r => r._price < purchasePrice && r._price <= safeCheapMax && !aroundIds.has(`${r.title}|${r.extractedPrice}|${r.source || ''}`))
+    .sort((a, b) => b._price - a._price)
+    .slice(0, 3);
+
+  return { around, cheaper };
+}
+
+function betterOptionsHTML(purchase, analysis){
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  return `
+    <div class="card mt-24 fade-up">
+      <h2 class="section-title">Better Options</h2>
+      <p class="section-sub">You entered ${esc(purchase.name)} at ${Fmt.currency(purchase.price)}. I looked online around that price and also checked for cheaper choices, so you can compare both in the Market Research section below.</p>
+    </div>`;
+}
 
 /**
  * A safe placeholder goal used anywhere the user has not created a real
@@ -1321,25 +1418,7 @@ function emptyState(title, body){
           `Watch for a discount that brings the price below ${Fmt.currency(purchase.price*0.9)}.`,
         ];
 
-    const alternatives = [
-      { name: suggestAlternativeName(purchase), price: Math.round(purchase.price * 0.72), impact: 'LOWER' },
-      { name: 'Certified refurbished option', price: Math.round(purchase.price * 0.65), impact: 'LOWER' },
-    ];
-
-    return { supportText, reasons, actionPlan, alternatives };
-  }
-
-  function suggestAlternativeName(purchase){
-    const map = {
-      Electronics: 'Lenovo IdeaPad Slim 5',
-      'Home & Furniture': 'A comparable mid-range option',
-      Fashion: 'A similar style, mid-tier brand',
-      'Health & Fitness': 'A month-to-month plan',
-      Travel: 'An off-peak booking',
-      Education: 'A self-paced version of the course',
-      Other: 'A comparable lower-cost option',
-    };
-    return map[purchase.category] || 'A comparable lower-cost option';
+    return { supportText, reasons, actionPlan };
   }
 
   // ------------------------------------------------------------------
@@ -1451,28 +1530,9 @@ function emptyState(title, body){
         </div>
       </div>
 
-      <div class="card mt-24 fade-up">
-        <h2 class="section-title">Better Options</h2>
-        <p class="section-sub">Comparable alternatives that reduce the financial impact</p>
-        <div class="alt-compare">
-          <div class="alt-card chosen">
-            <div class="ac-label">Your choice</div>
-            <div class="ac-name">${purchase.name}</div>
-            <div class="ac-price num">${Fmt.currency(purchase.price)}</div>
-          </div>
-          <div class="alt-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <div class="alt-card suggested">
-            <div class="ac-label">Alternative</div>
-            <div class="ac-name">${narrative.alternatives[0].name}</div>
-            <div class="ac-price num">${Fmt.currency(narrative.alternatives[0].price)}</div>
-            <div class="alt-savings">
-              Estimated savings <strong class="num">${Fmt.currency(purchase.price - narrative.alternatives[0].price)}</strong><br>
-              Financial impact <span class="badge badge-buy" style="margin-top:4px;">${narrative.alternatives[0].impact}</span>
-            </div>
-          </div>
-        </div>
-        <button class="btn btn-secondary mt-16">Compare</button>
-      </div>
+      ${betterOptionsHTML(purchase, analysis)}
+
+      ${marketResearchHTML(analysis.marketResearch, purchase, analysis)}
 
       <div class="card mt-24 fade-up">
         <h2 class="section-title">Future Affordability</h2>
