@@ -18,6 +18,7 @@ public class PurchaseDecision {
   @Enumerated(EnumType.STRING) private PurchaseType purchaseType = PurchaseType.ONE_TIME;
   private BigDecimal monthlyEmi = BigDecimal.ZERO;
   private Integer durationMonths;
+  private BigDecimal downPayment = BigDecimal.ZERO;
   @Column(length = 1000) private String reason;
   private String productUrl;
   @Enumerated(EnumType.STRING) private Decision decision;
@@ -50,6 +51,8 @@ public class PurchaseDecision {
   public void setMonthlyEmi(BigDecimal monthlyEmi){ this.monthlyEmi = monthlyEmi; }
   public Integer getDurationMonths(){ return durationMonths; }
   public void setDurationMonths(Integer durationMonths){ this.durationMonths = durationMonths; }
+  public BigDecimal getDownPayment(){ return downPayment; }
+  public void setDownPayment(BigDecimal downPayment){ this.downPayment = downPayment; }
   public String getReason(){ return reason; }
   public void setReason(String reason){ this.reason = reason; }
   public String getProductUrl(){ return productUrl; }

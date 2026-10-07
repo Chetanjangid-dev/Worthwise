@@ -48,6 +48,8 @@ public class AIExplanationService {
           + "purchase = " + purchaseJson + "\n\n"
           + "userFinances = " + profileJson + "\n\n"
           + "outcome = " + decisionJson + "\n\n"
+          + "If purchaseType is EMI: the real cost is downPayment + monthlyEmi x durationMonths (not just the price), "
+          + "only the downPayment comes out of savings today, and the monthlyEmi reduces the monthly surplus. Mention that total cost.\n\n"
           + "Now write your reply to the user about THIS purchase, following your style rules exactly. "
           + "Use their real numbers (product name, price, their income/savings, wait time, cheaper option) "
           + "but never mention field names, enum values, scores, or anything technical.";

@@ -41,7 +41,8 @@ public final class ApiDtos {
       @NotBlank String productName, String name, @NotBlank String category,
       @Positive BigDecimal price, PurchaseType purchaseType,
       @PositiveOrZero BigDecimal monthlyEmi, @Positive Integer durationMonths,
-      String reason, String productUrl) {}
+      String reason, String productUrl,
+      @PositiveOrZero BigDecimal downPayment) {}
 
   public record DecisionResponse(
       String id, String decision, int score, String affordability, String financialImpact,
@@ -62,6 +63,6 @@ public final class ApiDtos {
   public record DecisionItem(PurchaseSummary purchase, DecisionResponse analysis) {}
   public record PurchaseSummary(String id, String name, String category, BigDecimal price,
       PurchaseType purchaseType, String reason, String createdAt,
-      BigDecimal monthlyEmi, Integer durationMonths, String productUrl) {}
+      BigDecimal monthlyEmi, Integer durationMonths, String productUrl, BigDecimal downPayment) {}
   public record DashboardResponse(ProfileResponse profile, List<GoalResponse> goals, List<DecisionItem> recentDecisions) {}
 }

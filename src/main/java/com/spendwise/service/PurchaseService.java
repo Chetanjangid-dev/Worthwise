@@ -31,10 +31,24 @@ public class PurchaseService {
 
   @Transactional
   public DecisionResponse evaluate(AppUser user, PurchaseRequest req) {
+    PurchaseType type = req.purchaseType() == null ? PurchaseType.ONE_TIME : req.purchaseType();
+    boolean emi = type == PurchaseType.EMI;
+    if (emi) {
+      if (req.downPayment() == null)
+        throw new ApiException(HttpStatus.BAD_REQUEST, "Enter the down payment for an EMI purchase (use 0 if there is none).");
+      if (req.monthlyEmi() == null || req.monthlyEmi().signum() <= 0)
+        throw new ApiException(HttpStatus.BAD_REQUEST, "Enter the monthly EMI amount.");
+      if (req.durationMonths() == null || req.durationMonths() <= 0)
+        throw new ApiException(HttpStatus.BAD_REQUEST, "Enter the EMI duration in months.");
+      if (req.downPayment().compareTo(req.price()) > 0)
+        throw new ApiException(HttpStatus.BAD_REQUEST, "Down payment cannot be more than the product price.");
+    }
+    // One-time purchases carry no EMI/down-payment data, so it can never leak into the maths.
     PurchaseRequest normalized = new PurchaseRequest(
         req.productName() == null || req.productName().isBlank() ? req.name() : req.productName(),
-        req.name(), req.category(), req.price(), req.purchaseType() == null ? PurchaseType.ONE_TIME : req.purchaseType(),
-        req.monthlyEmi() == null ? BigDecimal.ZERO : req.monthlyEmi(), req.durationMonths(), req.reason(), req.productUrl());
+        req.name(), req.category(), req.price(), type,
+        emi ? req.monthlyEmi() : BigDecimal.ZERO, emi ? req.durationMonths() : null, req.reason(), req.productUrl(),
+        emi ? req.downPayment() : BigDecimal.ZERO);
     FinancialProfile profile = profiles.entity(user);
     DecisionResponse calculated = engine.evaluate(normalized, profile, goals.active(user));
     String explanation = ai.explain(normalized, profiles.toResponse(profile), calculated);
@@ -49,7 +63,8 @@ public class PurchaseService {
       PurchaseDecision pd = decisions.findByIdAndUser(id, user).orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Purchase decision not found"));;
      String note = " [Re-evaluation of an earlier decision using the updated profile and financial health]";
      String baseReason = pd.getReason() == null ? "" : pd.getReason().replace(note, "");
-     PurchaseRequest req = new PurchaseRequest(pd.getProductName(), pd.getProductName(), pd.getCategory(), pd.getPrice(), pd.getPurchaseType(), pd.getMonthlyEmi(), pd.getDurationMonths(), baseReason + note, pd.getProductUrl());
+     PurchaseRequest req = new PurchaseRequest(pd.getProductName(), pd.getProductName(), pd.getCategory(), pd.getPrice(), pd.getPurchaseType(), pd.getMonthlyEmi(), pd.getDurationMonths(), baseReason + note, pd.getProductUrl(),
+         pd.getDownPayment() == null ? BigDecimal.ZERO : pd.getDownPayment());
      return  evaluate(user, req);
     }
 
@@ -70,7 +85,7 @@ public class PurchaseService {
   private PurchaseDecision save(AppUser user, PurchaseRequest req, DecisionResponse r, String explanation) {
     PurchaseDecision p = new PurchaseDecision();//even thodugh we revaute the purchase we will  terta it as new decsion recird 
     p.setUser(user); p.setProductName(req.productName()); p.setCategory(req.category()); p.setPrice(req.price());
-    p.setPurchaseType(req.purchaseType()); p.setMonthlyEmi(req.monthlyEmi()); p.setDurationMonths(req.durationMonths());
+    p.setPurchaseType(req.purchaseType()); p.setMonthlyEmi(req.monthlyEmi()); p.setDurationMonths(req.durationMonths()); p.setDownPayment(req.downPayment());
     p.setReason(req.reason()); p.setProductUrl(req.productUrl()); p.setDecision(Decision.valueOf(r.decision()));
     p.setScore(r.score()); p.setSavingsAfterPurchase(r.savingsAfterPurchase()); p.setMonthlySurplusBefore(r.monthlySurplusBefore());
     p.setMonthlySurplusAfterPurchase(r.monthlySurplusAfterPurchase()); p.setRecommendedWaitMonths(r.recommendedWaitMonths());
@@ -88,7 +103,7 @@ public class PurchaseService {
         List.of(new ReasonResponse("positive", p.getExplanation())), List.of(), List.of(), p.getExplanation(), null);
     return new DecisionItem(new PurchaseSummary(p.getId().toString(), p.getProductName(), p.getCategory(), p.getPrice(), p.getPurchaseType(),
         p.getReason(), p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate().toString(),
-        p.getMonthlyEmi(), p.getDurationMonths(), p.getProductUrl()), r);
+        p.getMonthlyEmi(), p.getDurationMonths(), p.getProductUrl(), nz(p.getDownPayment())), r);
   }
   private DecisionResponse withId(PurchaseDecision p, DecisionResponse r, String explanation, MarketResearchResponse market) {
     return new DecisionResponse(p.getId().toString(), r.decision(), r.score(), r.affordability(), r.financialImpact(), r.goalImpact(),

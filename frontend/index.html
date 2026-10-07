@@ -463,17 +463,22 @@
           <div id="emi-fields" style="display:none;">
             <div class="step-form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:0 20px;">
               <div class="field">
-                <label for="p-emi">Monthly payment</label>
-                <div class="input-prefix"><span>₹</span><input class="input" id="p-emi" type="number" min="0"></div>
+                <label for="p-dp">Down payment</label>
+                <div class="input-prefix"><span>₹</span><input class="input" id="p-dp" type="number" min="0" step="any" placeholder="0 if none"></div>
               </div>
               <div class="field">
-                <label for="p-duration">Duration</label>
+                <label for="p-emi">Monthly EMI</label>
+                <div class="input-prefix"><span>₹</span><input class="input" id="p-emi" type="number" min="1" step="any"></div>
+              </div>
+              <div class="field">
+                <label for="p-duration">EMI duration</label>
                 <div class="input-prefix" style="position:relative;">
-                  <input class="input" id="p-duration" type="number" min="1" style="padding-right:70px;">
+                  <input class="input" id="p-duration" type="number" min="1" step="1" style="padding-right:70px;">
                   <span style="left:auto; right:14px;">months</span>
                 </div>
               </div>
             </div>
+            <div class="hint" id="emi-total-hint" style="margin:-4px 0 18px;">Enter the down payment, monthly EMI and duration to see the total cost.</div>
           </div>
 
           <div class="field">

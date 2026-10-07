@@ -100,7 +100,7 @@ const SpendWiseAPI = (() => {
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   // ⚠️ IMPORTANT: replace with your actual Render backend URL (no trailing slash).
-  const API_BASE = 'https://worthwise-snwh.onrender.com/api';
+ const API_BASE = 'https://worthwise-snwh.onrender.com/api';
 // const API_BASE = 'http://localhost:5000/api';
   
 
@@ -304,6 +304,7 @@ const SpendWiseAPI = (() => {
         purchaseType: purchaseInput.purchaseType,
         monthlyEmi: purchaseInput.monthlyEmi || 0,
         durationMonths: purchaseInput.durationMonths || purchaseInput.emiDuration || null,
+        downPayment: purchaseInput.purchaseType === 'EMI' ? (purchaseInput.downPayment ?? 0) : 0,
         reason: purchaseInput.reason,
         productUrl: purchaseInput.productUrl || purchaseInput.url || null,
       };
@@ -338,7 +339,7 @@ function marketResearchHTML(mr, purchase, analysis){
     const img = safeUrl(r.thumbnail);
     const extractedPrice = Number(r.extractedPrice);
     const purchasePrice = purchase ? Number(purchase.price) : NaN;
-    const cheaper = Number.isFinite(extractedPrice) && Number.isFinite(purchasePrice) && extractedPrice < purchasePrice;
+    const cheaper = Number.isFinite(extractedPrice) && Number.isFinite(purchasePrice) && extractedPrice < comparisonCost(purchase);
     const ratingValue = Number(r.rating);
     const reviewsValue = Number(r.reviews);
     const rating = Number.isFinite(ratingValue)
@@ -375,6 +376,18 @@ function marketResearchHTML(mr, purchase, analysis){
     </div>`;
 }
 
+// Total amount actually paid for an EMI purchase: down payment + monthly EMI x months.
+function emiTotalCost(purchase){
+  if (!purchase || purchase.purchaseType !== 'EMI') return null;
+  const months = Number(purchase.emiDuration || purchase.durationMonths) || 0;
+  return (Number(purchase.downPayment) || 0) + (Number(purchase.monthlyEmi) || 0) * months;
+}
+// The number a cheaper alternative is compared against: total EMI cost for EMI, plain price otherwise.
+function comparisonCost(purchase){
+  const t = emiTotalCost(purchase);
+  return t !== null && t > 0 ? t : Number(purchase?.price);
+}
+
 function marketResearchGroups(analysis, purchase){
   const max = Number(analysis?.safePriceRange?.max);
   const purchasePrice = Number(purchase?.price);
@@ -392,10 +405,12 @@ function marketResearchGroups(analysis, purchase){
     .sort((a, b) => Math.abs(a._price - purchasePrice) - Math.abs(b._price - purchasePrice))
     .slice(0, 1);
 
-  const safeCheapMax = Number.isFinite(max) && max > 0 ? Math.min(max, purchasePrice) : purchasePrice;
+  const isEmi = emiTotalCost(purchase) !== null;
+  const cheaperRef = comparisonCost(purchase);
+  const safeCheapMax = isEmi ? cheaperRef : (Number.isFinite(max) && max > 0 ? Math.min(max, purchasePrice) : purchasePrice);
   const aroundIds = new Set(around.map(r => `${r.title}|${r.extractedPrice}|${r.source || ''}`));
   const cheaper = valid
-    .filter(r => r._price < purchasePrice && r._price <= safeCheapMax && !aroundIds.has(`${r.title}|${r.extractedPrice}|${r.source || ''}`))
+    .filter(r => r._price < cheaperRef && r._price <= safeCheapMax && !aroundIds.has(`${r.title}|${r.extractedPrice}|${r.source || ''}`))
     .sort((a, b) => b._price - a._price)
     .slice(0, 3);
 
@@ -408,7 +423,7 @@ function betterOptionsHTML(purchase, analysis){
   return `
     <div class="card mt-24 fade-up">
       <h2 class="section-title">Better Options</h2>
-      <p class="section-sub">You entered ${esc(purchase.name)} at ${Fmt.currency(purchase.price)}. I looked online around that price and also checked for cheaper choices, so you can compare both in the Market Research section below.</p>
+      <p class="section-sub">You entered ${esc(purchase.name)} at ${Fmt.currency(purchase.price)}${emiTotalCost(purchase) !== null ? ` (total EMI cost ${Fmt.currency(emiTotalCost(purchase))})` : ''}. I looked online around that price and also checked for cheaper choices, so you can compare both in the Market Research section below.</p>
     </div>`;
 }
 
@@ -451,7 +466,11 @@ const DecisionEngineMock = (() => {
     goal = withGoalFallback(goal, profile);
     const monthlySurplus = profile.monthlyIncome - profile.monthlyExpenses;
     const effectivePrice = Math.max(purchase.price - discount, 0);
-    const savingsAfterPurchase = profile.currentSavings - effectivePrice + monthlySurplus * waitMonths + extraSaving * waitMonths;
+    // EMI: only the down payment leaves savings (the EMI itself reduces the monthly surplus below),
+    // so the price is never charged to both savings and surplus.
+    const isEmi = purchase.purchaseType === 'EMI' && (purchase.monthlyEmi || 0) > 0;
+    const upfront = isEmi ? Math.max((purchase.downPayment || 0) - discount, 0) : effectivePrice;
+    const savingsAfterPurchase = profile.currentSavings - upfront + monthlySurplus * waitMonths + extraSaving * waitMonths;
     const surplusAfterPurchase = monthlySurplus - (purchase.monthlyEmi || 0) + (waitMonths > 0 ? extraSaving : 0) - (waitMonths > 0 ? extraSaving : 0);
     const monthlyAvailableForGoal = monthlySurplus - (purchase.monthlyEmi || 0);
 
@@ -466,8 +485,8 @@ const DecisionEngineMock = (() => {
 
     const bufferRatio = profile.currentSavings > 0 ? savingsAfterPurchase / profile.currentSavings : 0;
     let decision = "BUY";
-    if (effectivePrice > profile.currentSavings * 0.6 && goalDelayMonths >= 2) decision = "WAIT";
-    if (effectivePrice > profile.currentSavings) decision = "SKIP";
+    if (upfront > profile.currentSavings * 0.6 && goalDelayMonths >= 2) decision = "WAIT";
+    if (upfront > profile.currentSavings) decision = "SKIP";
     if (waitMonths >= 3 || discount >= purchase.price * 0.15) decision = waitMonths > 0 ? "BUY" : decision;
     if (bufferRatio < 0.1 && waitMonths === 0) decision = "SKIP";
 
@@ -482,7 +501,7 @@ const DecisionEngineMock = (() => {
 
     return {
       decision,
-      affordability: effectivePrice <= profile.currentSavings ? "AFFORDABLE" : "CONDITIONALLY_AFFORDABLE",
+      affordability: upfront <= profile.currentSavings ? "AFFORDABLE" : "CONDITIONALLY_AFFORDABLE",
       estimatedPurchaseDate: purchaseDate.toISOString(),
       goalCompletionDate: goalCompletionAfter.toISOString(),
       goalDelayMonths: Math.max(goalDelayMonths - waitMonths, 0),
@@ -1288,9 +1307,34 @@ function emptyState(title, body){
       document.querySelectorAll('#purchase-form .radio-pill[data-type]').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       purchaseType = pill.dataset.type;
-      document.getElementById('emi-fields').style.display = purchaseType === 'EMI' ? 'block' : 'none';
+      applyPurchaseTypeUI();
     });
   });
+
+  // Show/hide the EMI inputs and make them mandatory only while EMI is selected.
+  function applyPurchaseTypeUI(){
+    const isEmi = purchaseType === 'EMI';
+    document.getElementById('emi-fields').style.display = isEmi ? 'block' : 'none';
+    ['p-dp', 'p-emi', 'p-duration'].forEach(id => { document.getElementById(id).required = isEmi; });
+    updateEmiHint();
+  }
+  function updateEmiHint(){
+    const hint = document.getElementById('emi-total-hint');
+    if (!hint) return;
+    const dp = document.getElementById('p-dp').value;
+    const emi = Number(document.getElementById('p-emi').value) || 0;
+    const months = Number(document.getElementById('p-duration').value) || 0;
+    const price = Number(document.getElementById('p-price').value) || 0;
+    if (dp === '' || !emi || !months) {
+      hint.textContent = 'Enter the down payment, monthly EMI and duration to see the total cost.';
+      return;
+    }
+    const total = Number(dp) + emi * months;
+    const extra = total - price;
+    hint.textContent = `Total cost: ${Fmt.currency(total)} (${Fmt.currency(Number(dp))} down + ${Fmt.currency(emi)} × ${months} months)` +
+      (price > 0 ? (extra > 0 ? ` — ${Fmt.currency(extra)} more than the price.` : '.') : '.');
+  }
+  ['p-dp', 'p-emi', 'p-duration', 'p-price'].forEach(id => document.getElementById(id).addEventListener('input', updateEmiHint));
 
   function setProgress(step){
     progress.querySelectorAll('.sp-item').forEach(item => {
@@ -1303,6 +1347,18 @@ function emptyState(title, body){
   // ---- STEP 1 -> STEP 2 ----
   document.getElementById('purchase-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (purchaseType === 'EMI') {
+      const price = Number(document.getElementById('p-price').value) || 0;
+      const dp = document.getElementById('p-dp').value;
+      if (dp === '' || !(Number(document.getElementById('p-emi').value) > 0) || !(Number(document.getElementById('p-duration').value) > 0)) {
+        alert('For an EMI purchase, please enter the down payment, monthly EMI and duration.');
+        return;
+      }
+      if (Number(dp) > price) {
+        alert('The down payment cannot be more than the product price.');
+        return;
+      }
+    }
     revaluateId = null;
     currentPurchase = {
       id: 'p_new_' + Date.now(),
@@ -1310,6 +1366,7 @@ function emptyState(title, body){
       category: document.getElementById('p-category').value,
       price: Number(document.getElementById('p-price').value) || 0,
       purchaseType,
+      downPayment: purchaseType === 'EMI' ? Number(document.getElementById('p-dp').value) || 0 : 0,
       monthlyEmi: purchaseType === 'EMI' ? Number(document.getElementById('p-emi').value) || 0 : 0,
       emiDuration: purchaseType === 'EMI' ? Number(document.getElementById('p-duration').value) || 0 : 0,
       reason: document.getElementById('p-reason').value,
@@ -1398,7 +1455,10 @@ function emptyState(title, body){
     document.getElementById('p-url').value = p.url || '';
     purchaseType = p.purchaseType || 'ONE_TIME';
     document.querySelectorAll('#purchase-form .radio-pill[data-type]').forEach(x => x.classList.toggle('active', x.dataset.type === purchaseType));
-    document.getElementById('emi-fields').style.display = purchaseType === 'EMI' ? 'block' : 'none';
+    document.getElementById('p-dp').value = p.downPayment ?? '';
+    document.getElementById('p-emi').value = p.monthlyEmi || '';
+    document.getElementById('p-duration').value = p.emiDuration || '';
+    applyPurchaseTypeUI();
   }
 
   // Entry point from Decisions -> "Re-evaluate": skips step 1 and lands on
@@ -1412,6 +1472,7 @@ function emptyState(title, body){
       category: purchase.category,
       price: Number(purchase.price) || 0,
       purchaseType: purchase.purchaseType || 'ONE_TIME',
+      downPayment: Number(purchase.downPayment) || 0,
       monthlyEmi: Number(purchase.monthlyEmi) || 0,
       emiDuration: Number(purchase.durationMonths) || 0,
       reason: purchase.reason || '',
@@ -1525,7 +1586,7 @@ function emptyState(title, body){
         <div>
           <div class="eyebrow">Purchase Analysis</div>
           <h2 class="rp-name">${purchase.name}</h2>
-          <div class="rp-price">${Fmt.currency(purchase.price)}${purchase.purchaseType === 'EMI' ? ` · ${Fmt.currency(purchase.monthlyEmi)}/mo` : ''}</div>
+          <div class="rp-price">${Fmt.currency(purchase.price)}${purchase.purchaseType === 'EMI' ? ` · ${Fmt.currency(purchase.downPayment || 0)} down + ${Fmt.currency(purchase.monthlyEmi)}/mo × ${purchase.emiDuration} mo = ${Fmt.currency(emiTotalCost(purchase))} total` : ''}</div>
         </div>
         <span class="badge-ai">AI Analysis</span>
       </div>

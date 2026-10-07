@@ -43,6 +43,14 @@ public class MarketResearchService {
         : (purchase.category() == null ? "" : purchase.category().trim());
     if (query.isBlank()) return null;
 
+    // For EMI, "cheaper" is judged against what the user would REALLY pay: down payment + EMI x months.
+    BigDecimal emiTotal = null;
+    if (purchase.purchaseType() == com.spendwise.model.Enums.PurchaseType.EMI
+        && purchase.monthlyEmi() != null && purchase.monthlyEmi().signum() > 0 && purchase.durationMonths() != null) {
+      BigDecimal dp = purchase.downPayment() == null ? BigDecimal.ZERO : purchase.downPayment();
+      emiTotal = dp.add(purchase.monthlyEmi().multiply(BigDecimal.valueOf(purchase.durationMonths())));
+    }
+
     long start = System.currentTimeMillis();
     try {
       Map<?, ?> res = webClient.get()
@@ -69,7 +77,7 @@ public class MarketResearchService {
           String title = str(m.get("title"));
           if (title == null) continue; // unusable without a title
           BigDecimal extractedPrice = decimal(m.get("extracted_price"));
-          if (!isUsefulCandidate(extractedPrice, safeMaxPrice, purchase.price())) continue;
+          if (!isUsefulCandidate(extractedPrice, safeMaxPrice, purchase.price(), emiTotal)) continue;
           String link = str(m.get("link"));
           if (link == null) link = str(m.get("product_link"));
           results.add(new MarketResultResponse(title, str(m.get("price")), extractedPrice,
@@ -101,12 +109,16 @@ public class MarketResearchService {
     if (o instanceof Number n) return BigDecimal.valueOf(n.doubleValue());
     try { return o == null ? null : new BigDecimal(o.toString()); } catch (NumberFormatException e) { return null; }
   }
-  private static boolean isUsefulCandidate(BigDecimal price, BigDecimal safeMaxPrice, BigDecimal purchasePrice) {
+  private static boolean isUsefulCandidate(BigDecimal price, BigDecimal safeMaxPrice, BigDecimal purchasePrice, BigDecimal emiTotal) {
     if (price == null || purchasePrice == null || purchasePrice.signum() <= 0) return false;
     BigDecimal aroundMin = purchasePrice.multiply(new BigDecimal("0.75"));
     BigDecimal aroundMax = purchasePrice.multiply(new BigDecimal("1.25"));
     boolean aroundEnteredPrice = price.compareTo(aroundMin) >= 0 && price.compareTo(aroundMax) <= 0;
 
+    if (emiTotal != null) {
+      // EMI: any option that costs less than the total EMI outlay is a real saving.
+      return aroundEnteredPrice || price.compareTo(emiTotal) < 0;
+    }
     BigDecimal cheaperMax = safeMaxPrice != null && safeMaxPrice.signum() > 0
         ? safeMaxPrice.min(purchasePrice)
         : purchasePrice;
