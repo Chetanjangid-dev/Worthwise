@@ -100,8 +100,8 @@ const SpendWiseAPI = (() => {
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   // ⚠️ IMPORTANT: replace with your actual Render backend URL (no trailing slash).
-  const API_BASE = 'https://worthwise-snwh.onrender.com/api';
-// const API_BASE = 'http://localhost:5000/api';
+//  const API_BASE = 'https://worthwise-snwh.onrender.com/api';
+ const API_BASE = 'http://localhost:5000/api';
   
 
   let authToken = localStorage.getItem('spendwise_token') || '';
@@ -201,6 +201,7 @@ const SpendWiseAPI = (() => {
     async register(email, password, name, gender){ return authenticate('/auth/register', { email, password, name, gender }); },
     logout(){
       authToken = '';
+      healthCache = null;
       localStorage.removeItem('spendwise_token');
       window.location.hash = '#/auth';
     },
@@ -549,6 +550,35 @@ const NAV_ITEMS = [
 
 let currentUserCache = { name: 'User', email: '' };
 
+// ---- Financial health: ONE calculation shared by dashboard, sidebar and mobile sheet ----
+let healthCache = null;
+function computeHealth(profile){
+  const income = Number(profile.monthlyIncome || 0);
+  const expenses = Number(profile.monthlyExpenses || 0);
+  const savings = Number(profile.currentSavings || 0);
+  const emergencyTarget = Number(profile.emergencyFundTarget || 0);
+  const surplus = income - expenses;
+  const savingsRate = income > 0 ? Math.max(surplus, 0) / income : 0;
+  const emergencyRatio = emergencyTarget > 0 ? Math.min(savings / emergencyTarget, 1) : 0;
+  const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
+  const label = income <= 0 ? 'Set up profile' : score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'At risk';
+  const color = income <= 0 ? 'var(--ink-faint)' : score >= 75 ? 'var(--buy)' : score >= 45 ? 'var(--wait)' : 'var(--skip)';
+  return { score, label, color };
+}
+function applyHealthToDom(){
+  const h = healthCache;
+  document.querySelectorAll('.health-mini .value, .as-health b').forEach(el => {
+    const dot = el.querySelector('.dot');
+    if (dot) dot.style.background = h ? h.color : 'var(--ink-faint)';
+    const txt = el.querySelector('.health-text');
+    if (txt) txt.textContent = h ? h.label : 'Checking…';
+  });
+}
+function updateHealthStatus(profile){
+  healthCache = computeHealth(profile);
+  applyHealthToDom();
+}
+
 const ICONS = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   scan: '<path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"/><circle cx="12" cy="12" r="3.2"/>',
@@ -647,7 +677,7 @@ function sidebarMarkup(activePath){
     </button>
     <div class="health-mini mt-16">
       <div class="label">Your Financial Health</div>
-      <div class="value"><span class="dot"></span> Good</div>
+      <div class="value"><span class="dot"></span> <span class="health-text">${healthCache ? healthCache.label : 'Checking…'}</span></div>
     </div>
     <a class="profile-mini" href="#/profile">
       <div class="avatar">CH</div>
@@ -734,6 +764,10 @@ function initShell(){
   function closeDrawer(){
     sidebar.classList.remove('open');
     overlay.classList.remove('visible');
+  }
+  applyHealthToDom();
+  if (!healthCache) {
+    SpendWiseAPI.getFinancialProfile().then(updateHealthStatus).catch(() => {});
   }
   if (toggle) toggle.addEventListener('click', openDrawer);
   if (overlay) overlay.addEventListener('click', closeDrawer);
@@ -874,7 +908,7 @@ function renderMobileBottomNav(activeKey){
         <div class="as-email" id="as-email"></div>
       </div>
     </div>
-    <div class="as-health"><span>Your financial health</span><b><span class="dot"></span> Good</b></div>
+    <div class="as-health"><span>Your financial health</span><b><span class="dot"></span> <span class="health-text">Checking…</span></b></div>
     <a class="as-link" href="#/profile">
       <span class="as-ico as-ico-profile">${cIcon('sliders', 22)}</span>
       <span class="as-link-text"><b>Financial Profile</b><small>Income, expenses, savings &amp; preferences</small></span>
@@ -1041,15 +1075,15 @@ function renderSnapshot(profile){
   const savingsRate = income > 0 ? Math.round(Math.max(surplus, 0) / income * 100) : 0;
   const emergencyPct = emergencyTarget > 0 ? Math.round(Math.min(savings / emergencyTarget * 100, 999)) : 0;
   const cards = [
-    { title: 'Monthly Income', value: income, icon: 'income', indicator: income > 0 ? 'Saved in your profile' : 'Add income in profile', tone: 'flat' },
-    { title: 'Monthly Expenses', value: expenses, icon: 'expense', indicator: `${expenseRatio}% of income`, tone: expenseRatio > 80 ? 'down' : 'flat' },
-    { title: 'Available Monthly Surplus', value: surplus, icon: 'surplus', indicator: `${savingsRate}% savings rate`, tone: surplus >= 0 ? 'up' : 'down' },
-    { title: 'Current Savings', value: savings, icon: 'savings', indicator: emergencyTarget > 0 ? `${emergencyPct}% toward emergency target` : 'Set emergency target', tone: savings >= emergencyTarget ? 'up' : 'flat' },
+    { title: 'Monthly Income', target: 'in-income', value: income, icon: 'income', indicator: income > 0 ? 'Saved in your profile' : 'Add income in profile', tone: 'flat' },
+    { title: 'Monthly Expenses', target: 'expense', value: expenses, icon: 'expense', indicator: `${expenseRatio}% of income`, tone: expenseRatio > 80 ? 'down' : 'flat' },
+    { title: 'Available Monthly Surplus', target: 'in-income', value: surplus, icon: 'surplus', indicator: `${savingsRate}% savings rate`, tone: surplus >= 0 ? 'up' : 'down' },
+    { title: 'Current Savings', target: 'in-savings', value: savings, icon: 'savings', indicator: emergencyTarget > 0 ? `${emergencyPct}% toward emergency target` : 'Set emergency target', tone: savings >= emergencyTarget ? 'up' : 'flat' },
   ];
 
   const grid = document.getElementById('snapshot-grid');
   grid.innerHTML = cards.map((c, i) => `
-    <div class="snapshot-card fade-up" style="animation-delay:${i*60}ms">
+    <div class="snapshot-card snapshot-link fade-up" data-profile-target="${c.target}" role="link" tabindex="0" title="Edit in Financial Profile" style="animation-delay:${i*60}ms">
       <div class="top-row">
         <span class="title">${c.title}</span>
         <span class="icon-wrap">${cIcon(c.icon, 22)}</span>
@@ -1065,6 +1099,44 @@ function renderSnapshot(profile){
   grid.querySelectorAll('.value').forEach(el => {
     animateCount(el, Number(el.dataset.target), { prefix: '₹' });
   });
+
+  // Clickable cards -> Financial Profile, focusing the matching input.
+  // (property handlers are overwritten on each render, so no duplicates)
+  const openCard = (e) => {
+    const card = e.target.closest('[data-profile-target]');
+    if (card) goToProfileField(card.dataset.profileTarget);
+  };
+  grid.onclick = openCard;
+  grid.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCard(e); }
+  };
+}
+
+// Navigate to the profile page, then scroll to and focus an input.
+// target: an input id ('in-income', 'in-savings') or 'expense' (first expense field).
+function goToProfileField(target){
+  const find = () => target === 'expense'
+    ? document.querySelector('#expense-fields [data-expense]')
+    : document.getElementById(target);
+  const focusIt = () => {
+    const input = find();
+    if (!input) return false;
+    const section = input.closest('.profile-section') || input;
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input.focus({ preventScroll: true });
+    if (input.select) input.select();
+    section.classList.add('field-highlight');
+    setTimeout(() => section.classList.remove('field-highlight'), 1800);
+    return true;
+  };
+  window.location.hash = '#/profile';
+  // The profile page loads its values asynchronously, so retry briefly.
+  let tries = 0;
+  const timer = setInterval(() => {
+    const page = document.getElementById('view-profile');
+    const visible = page && page.style.display !== 'none';
+    if ((visible && find() && focusIt()) || ++tries > 40) clearInterval(timer);
+  }, 100);
 }
 
 function renderHealth(user, profile){
@@ -1076,8 +1148,8 @@ function renderHealth(user, profile){
   const surplus = income - expenses;
   const savingsRate = income > 0 ? Math.max(surplus, 0) / income : 0;
   const emergencyRatio = emergencyTarget > 0 ? Math.min(savings / emergencyTarget, 1) : 0;
-  const score = Math.round(Math.min(100, savingsRate * 55 + emergencyRatio * 35 + (surplus >= 0 ? 10 : 0)));
-  const label = score >= 75 ? 'Good' : score >= 45 ? 'Needs attention' : 'Set up profile';
+  const { score, label } = computeHealth(profile);
+  updateHealthStatus(profile);
   const healthCopy = income <= 0
     ? 'Add your real income, expenses, savings, and goals. Worthwise will update this score from your saved database profile.'
     : surplus < 0
@@ -1110,6 +1182,16 @@ function renderGoal(goal){
   const el = document.getElementById('goal-card');
   if (!goal) {
     el.innerHTML = emptyState('No goals yet', 'Create a financial goal so purchase decisions can account for your timeline.');
+    const plus = el.querySelector('.empty-state svg');
+    if (plus) {
+      plus.classList.add('empty-plus-link');
+      plus.setAttribute('role', 'button');
+      plus.setAttribute('tabindex', '0');
+      plus.setAttribute('aria-label', 'Create a goal');
+      const go = () => { window.location.hash = '#/goals'; };
+      plus.addEventListener('click', go);
+      plus.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    }
     return;
   }
   const pct = goal.targetAmount > 0 ? Math.round(goal.currentAmount / goal.targetAmount * 100) : 0;
@@ -1982,7 +2064,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const goals = await SpendWiseAPI.getGoals();
     const grid = document.getElementById('goals-grid');
     if (!grid) return;
-    grid.innerHTML = goals.map(g => {
+    const goalsHtml = goals.map(g => {
       const pct = g.targetAmount > 0 ? Math.round(g.currentAmount / g.targetAmount * 100) : 0;
       return `
       <div class="card card-hover goal-card fade-up">
@@ -2002,7 +2084,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>Target: ${Fmt.compactMonth(g.targetDate)}</span>
         </div>
       </div>`;
-    }).join('') + `
+    }).join('');
+    const formHtml = `
       <form class="create-goal-card goal-create-form" id="goal-create-form">
         <div class="goal-create-title">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -2025,6 +2108,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="inline-status" id="goal-create-status"></div>
       </form>
     `;
+    // Create Goal form always comes first, then the existing goals
+    grid.innerHTML = formHtml + goalsHtml;
     const form = document.getElementById('goal-create-form');
     const status = document.getElementById('goal-create-status');
     form?.addEventListener('submit', async (e) => {
@@ -2057,6 +2142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!SpendWiseAPI.isAuthenticated()) return;
     if (!document.getElementById('in-income')) return;
     profileState = await SpendWiseAPI.getFinancialProfile();
+    updateHealthStatus(profileState);
     document.getElementById('in-income').value = profileState.monthlyIncome;
     document.getElementById('in-savings').value = profileState.currentSavings;
 

@@ -1441,3 +1441,11 @@ input[type="range"]::-moz-range-thumb{
 }
 .ww-modal-err{ min-height:18px; margin-top:8px; font-size:13px; color: var(--skip); }
 .ww-modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
+
+/* Clickable overview cards + empty-goal plus icon */
+.snapshot-link{ cursor:pointer; }
+.snapshot-link:hover{ border-color: var(--pine); }
+.snapshot-link:focus-visible{ outline:2px solid var(--pine); outline-offset:2px; }
+.empty-plus-link{ cursor:pointer; opacity:.7 !important; transition: transform .15s var(--ease), opacity .15s var(--ease); border-radius:50%; }
+.empty-plus-link:hover, .empty-plus-link:focus-visible{ opacity:1 !important; transform: scale(1.12); color: var(--pine); outline:none; }
+.profile-section.field-highlight{ box-shadow: 0 0 0 2px var(--pine); transition: box-shadow .3s var(--ease); }
