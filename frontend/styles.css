@@ -1449,3 +1449,14 @@ input[type="range"]::-moz-range-thumb{
 .empty-plus-link{ cursor:pointer; opacity:.7 !important; transition: transform .15s var(--ease), opacity .15s var(--ease); border-radius:50%; }
 .empty-plus-link:hover, .empty-plus-link:focus-visible{ opacity:1 !important; transform: scale(1.12); color: var(--pine); outline:none; }
 .profile-section.field-highlight{ box-shadow: 0 0 0 2px var(--pine); transition: box-shadow .3s var(--ease); }
+
+/* ---- "Done this purchase" ---- */
+.purchased-mark{
+  display:inline-flex; align-items:center; gap:4px; margin-left:8px; padding:2px 8px;
+  border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.02em;
+  background: var(--buy-soft); color: var(--buy); vertical-align:middle; white-space:nowrap;
+}
+.purchased-mark.big{ font-size:13px; padding:6px 12px; margin-left:0; }
+.done-msg{ margin-top:14px; padding:12px 14px; border-radius:10px; font-size:14px; line-height:1.5; }
+.done-msg.ok{ background: var(--buy-soft); color: var(--buy); }
+.done-msg.err{ background: var(--skip-soft); color: var(--skip); }

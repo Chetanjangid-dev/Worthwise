@@ -34,6 +34,8 @@ public class PurchaseDecision {
   private LocalDate goalCompletionDate;
   @Column(length = 2000) private String reasonCodes;
   @Column(length = 4000) private String explanation;
+  private Boolean purchased = false;
+  private Instant purchasedAt;
   @Column(nullable = false) private Instant createdAt = Instant.now();
 
   public UUID getId(){ return id; }
@@ -83,5 +85,9 @@ public class PurchaseDecision {
   public void setReasonCodes(String reasonCodes){ this.reasonCodes = reasonCodes; }
   public String getExplanation(){ return explanation; }
   public void setExplanation(String explanation){ this.explanation = explanation; }
+  public boolean isPurchased(){ return Boolean.TRUE.equals(purchased); }
+  public void setPurchased(boolean purchased){ this.purchased = purchased; }
+  public Instant getPurchasedAt(){ return purchasedAt; }
+  public void setPurchasedAt(Instant purchasedAt){ this.purchasedAt = purchasedAt; }
   public Instant getCreatedAt(){ return createdAt; }
 }

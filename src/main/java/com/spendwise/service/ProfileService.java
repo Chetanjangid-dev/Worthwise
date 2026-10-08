@@ -39,7 +39,21 @@ public class ProfileService {
     if (req.riskTolerance() != null) p.setRiskTolerance(req.riskTolerance());
     if (req.savingPriority() != null) p.setSavingPriority(req.savingPriority());
     if (req.purchasePreference() != null) p.setPurchasePreference(req.purchasePreference());
+    validate(p); // throws -> transaction rolls back, nothing invalid is ever saved
     return toResponse(p);
+  }
+
+  /** A profile must always be financially valid: no negative amounts, savings or monthly surplus. */
+  public static void validate(FinancialProfile p) {
+    BigDecimal[] amounts = { p.getMonthlyIncome(), p.getCurrentSavings(), p.getEmergencyFundTarget(), p.getExistingEmi(),
+        p.getHousingExpense(), p.getFoodExpense(), p.getTransportExpense(), p.getSubscriptionExpense(), p.getOtherExpense() };
+    for (BigDecimal a : amounts)
+      if (a != null && a.signum() < 0)
+        throw new ApiException(HttpStatus.BAD_REQUEST, "Amounts in your profile cannot be negative. Please enter 0 or a positive value.");
+    if (p.getMonthlyIncome().subtract(expenses(p)).signum() < 0)
+      throw new ApiException(HttpStatus.BAD_REQUEST,
+          "Your monthly expenses (including existing EMI) are higher than your income, which would give a negative monthly surplus. "
+          + "Please correct your income or expenses \u2014 an invalid profile can lead to wrong analysis.");
   }
 
   public ProfileResponse toResponse(FinancialProfile p) {

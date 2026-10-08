@@ -100,8 +100,8 @@ const SpendWiseAPI = (() => {
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   // ⚠️ IMPORTANT: replace with your actual Render backend URL (no trailing slash).
- const API_BASE = 'https://worthwise-snwh.onrender.com/api';
-// const API_BASE = 'http://localhost:5000/api';
+ //const API_BASE = 'https://worthwise-snwh.onrender.com/api';
+const API_BASE = 'http://localhost:5000/api';
   
 
   let authToken = localStorage.getItem('spendwise_token') || '';
@@ -259,6 +259,13 @@ const SpendWiseAPI = (() => {
     async getDecision(id) {
       if (!isAuthenticated()) { await delay(80); return null; }
       return adaptDecisionItem(await api(`/purchases/${id}`));
+    },
+
+    // POST /api/purchases/{id}/purchased  ("Done this purchase": updates savings / surplus in the profile)
+    async markPurchased(id) {
+      const item = adaptDecisionItem(await api(`/purchases/${id}/purchased`, { method: 'POST' }));
+      healthCache = null; // profile changed -> recompute financial health everywhere
+      return item;
     },
 
     // DELETE /api/purchases/{id}
@@ -1249,7 +1256,7 @@ function renderDecisions(decisions){
     <div class="decision-row" onclick="window.location.hash='#/decisions?id=${d.purchase.id}'">
       <div class="cat-icon">${cIcon(CATEGORY_ICON[d.purchase.category] || 'electronics', 22)}</div>
       <div class="d-main">
-        <div class="d-name">${d.purchase.name}</div>
+        <div class="d-name">${d.purchase.name}${d.purchase.purchased ? ' <span class="purchased-mark">✓ Purchased</span>' : ''}</div>
         <div class="d-meta">Analyzed ${Fmt.relativeDays(d.purchase.createdAt)}</div>
       </div>
       <div class="d-right">
@@ -1696,8 +1703,10 @@ function emptyState(title, body){
         </div>
         <div class="flex mt-24" style="gap:12px; flex-wrap:wrap;">
           <button class="btn btn-primary" id="save-plan-btn">Save Purchase Plan</button>
+          ${analysis.id ? '<button class="btn btn-secondary" id="done-purchase-btn">✓ Done this purchase</button>' : ''}
           <button class="btn btn-secondary" onclick="window.location.reload()">Analyze Another Purchase</button>
         </div>
+        <div id="done-purchase-msg" class="done-msg" style="display:none;"></div>
       </div>
     `;
 
@@ -1712,6 +1721,26 @@ function emptyState(title, body){
     document.getElementById('save-plan-btn').addEventListener('click', (e) => {
       e.target.textContent = 'Saved ✓';
       e.target.disabled = true;
+    });
+
+    // "Done this purchase": ask the backend to apply this purchase to the user's profile.
+    const doneBtn = document.getElementById('done-purchase-btn');
+    if (doneBtn) doneBtn.addEventListener('click', async () => {
+      const msg = document.getElementById('done-purchase-msg');
+      doneBtn.disabled = true;
+      try {
+        await SpendWiseAPI.markPurchased(analysis.id);
+        doneBtn.textContent = 'Purchased ✓';
+        msg.className = 'done-msg ok';
+        msg.textContent = 'Great! This purchase is marked as done and your savings / monthly surplus have been updated in your profile.';
+        msg.style.display = 'block';
+        SpendWiseAPI.getFinancialProfile().then(updateHealthStatus).catch(() => {});
+      } catch (err) {
+        doneBtn.disabled = false;
+        msg.className = 'done-msg err';
+        msg.textContent = err.message || 'Could not update your profile. Please try again.';
+        msg.style.display = 'block';
+      }
     });
   }
 
@@ -1827,6 +1856,10 @@ function emptyState(title, body){
     if (params.get('id')) openDetail(params.get('id'));
   }
 
+  function purchasedMark(d){
+    return d.purchase.purchased ? ' <span class="purchased-mark" title="You marked this purchase as done">✓ Purchased</span>' : '';
+  }
+
   function filtered(){
     return allDecisions.filter(d => {
       const matchesFilter = activeFilter === 'ALL' || d.analysis.decision === activeFilter;
@@ -1854,7 +1887,7 @@ function emptyState(title, body){
 
     tbody.innerHTML = list.map(d => `
       <tr onclick="window.SpendWiseDecisions.open('${d.purchase.id}')">
-        <td class="prod-name">${d.purchase.name}</td>
+        <td class="prod-name">${d.purchase.name}${purchasedMark(d)}</td>
         <td class="num">${Fmt.currency(d.purchase.price)}</td>
         <td><span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span></td>
         <td class="faint"><span class="date-cell">${Fmt.shortDate(d.purchase.createdAt)}<button type="button" class="row-del" title="Delete decision" aria-label="Delete decision" onclick="event.stopPropagation(); SpendWiseDecisions.remove('${d.purchase.id}')">&#128465;</button></span></td>
@@ -1864,7 +1897,7 @@ function emptyState(title, body){
     cardsEl.innerHTML = list.map(d => `
       <div class="dcard mb-16" onclick="window.SpendWiseDecisions.open('${d.purchase.id}')">
         <div class="dc-top">
-          <span class="dc-name">${d.purchase.name}</span>
+          <span class="dc-name">${d.purchase.name}${purchasedMark(d)}</span>
           <span class="badge badge-${d.analysis.decision.toLowerCase()}">${d.analysis.decision}</span>
         </div>
         <div class="dc-meta"><span class="num">${Fmt.currency(d.purchase.price)}</span><span>${Fmt.shortDate(d.purchase.createdAt)}</span><button type="button" class="row-del" title="Delete decision" aria-label="Delete decision" onclick="event.stopPropagation(); SpendWiseDecisions.remove('${d.purchase.id}')">&#128465;</button></div>
@@ -1882,6 +1915,7 @@ function emptyState(title, body){
       <p class="muted num" style="font-size:15px;">${Fmt.currency(d.purchase.price)} · ${Fmt.shortDate(d.purchase.createdAt)}</p>
       <div class="flex-between mt-16" style="align-items:flex-start;">
         <span class="badge badge-${d.analysis.decision.toLowerCase()}" style="font-size:14px; padding:8px 14px;">${d.analysis.decision}</span>
+        ${d.purchase.purchased ? '<span class="purchased-mark big">✓ Purchased</span>' : ''}
       </div>
       <p class="muted mt-16" style="font-size:14.5px; line-height:1.6;">${d.purchase.reason}</p>
       <hr class="divider">
@@ -1896,9 +1930,11 @@ function emptyState(title, body){
       ${d.analysis.actionPlan.map(a => `<div class="plan-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg><span>${a}</span></div>`).join('')}
       <hr class="divider">
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        ${d.purchase.purchased ? '' : `<button type="button" class="btn btn-secondary" id="detail-done-btn" onclick="SpendWiseDecisions.done('${d.purchase.id}')">✓ Done this purchase</button>`}
         <button type="button" class="btn btn-primary" onclick="SpendWiseDecisions.revaluate('${d.purchase.id}')">↻ Re-evaluate</button>
         <button type="button" class="ww-danger-btn" onclick="SpendWiseDecisions.remove('${d.purchase.id}')">Delete this decision</button>
       </div>
+      <div id="detail-done-msg" class="done-msg" style="display:none;"></div>
     `;
     document.getElementById('detail-modal').style.display = 'flex';
   }
@@ -1924,6 +1960,33 @@ function emptyState(title, body){
     });
   }
 
+  async function donePurchase(id){
+    const btn = document.getElementById('detail-done-btn');
+    const msg = document.getElementById('detail-done-msg');
+    if (btn) btn.disabled = true;
+    try {
+      const updated = await SpendWiseAPI.markPurchased(id);
+      const i = allDecisions.findIndex(x => x.purchase.id === id);
+      if (i >= 0) allDecisions[i] = updated;
+      render();
+      await openDetail(id); // re-render modal with the Purchased mark
+      const m = document.getElementById('detail-done-msg');
+      if (m) {
+        m.className = 'done-msg ok';
+        m.textContent = 'Marked as purchased. Your savings / monthly surplus have been updated in your profile.';
+        m.style.display = 'block';
+      }
+      SpendWiseAPI.getFinancialProfile().then(updateHealthStatus).catch(() => {});
+    } catch (err) {
+      if (btn) btn.disabled = false;
+      if (msg) {
+        msg.className = 'done-msg err';
+        msg.textContent = err.message || 'Could not update your profile. Please try again.';
+        msg.style.display = 'block';
+      }
+    }
+  }
+
   function revaluateDecision(id){
     const d = allDecisions.find(x => x.purchase.id === id);
     if (!d) return;
@@ -1933,7 +1996,7 @@ function emptyState(title, body){
     setTimeout(() => window.SpendWiseAnalyze && window.SpendWiseAnalyze.startRevaluate(d.purchase), 0);
   }
 
-  window.SpendWiseDecisions = { open: openDetail, remove: removeDecision, reinit: init, revaluate: revaluateDecision };
+  window.SpendWiseDecisions = { open: openDetail, remove: removeDecision, reinit: init, revaluate: revaluateDecision, done: donePurchase };
   document.addEventListener('DOMContentLoaded', init);
 })();
 /* ------------------------------------------------------------------ *
@@ -2241,6 +2304,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('save-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('save-btn');
+    const statusEl = document.getElementById('save-status');
+    // ---- client-side validation (the server validates again) ----
+    const incomeVal = Number(document.getElementById('in-income').value) || 0;
+    const savingsVal = Number(document.getElementById('in-savings').value) || 0;
+    let expenseTotal = 0, hasNegative = incomeVal < 0 || savingsVal < 0;
+    document.querySelectorAll('[data-expense]').forEach(input => {
+      const v = Number(input.value) || 0;
+      if (v < 0) hasNegative = true;
+      expenseTotal += v;
+    });
+    expenseTotal += Number((typeof profileState !== 'undefined' && profileState && profileState.existingEmi) || 0);
+    if (hasNegative) { statusEl.textContent = 'Income, savings and expenses cannot be negative.'; return; }
+    if (incomeVal - expenseTotal < 0) {
+      statusEl.textContent = 'Your expenses are higher than your income (negative monthly surplus). Please correct them.';
+      return;
+    }
     btn.textContent = 'Saving…'; btn.disabled = true;
     const expenseBreakdown = {};
     document.querySelectorAll('[data-expense]').forEach(input => {

@@ -15,6 +15,7 @@ public class PurchaseController {
   @PostMapping("/evaluate") DecisionResponse evaluate(@Valid @RequestBody PurchaseRequest req){ return purchases.evaluate(users.currentUser(), req); }
   @GetMapping("/history") List<DecisionItem> history(){ return purchases.history(users.currentUser()); }
   @GetMapping("/revaluate/{id}") DecisionResponse revaluate(@PathVariable("id") UUID id){ return purchases.revaluate(users.currentUser(), id); } 
+  @PostMapping("/{id}/purchased") DecisionItem purchased(@PathVariable("id") UUID id){ return purchases.markPurchased(users.currentUser(), id); }
   @GetMapping("/{id}") DecisionItem get(@PathVariable("id") UUID id){ return purchases.get(users.currentUser(), id); }
   @DeleteMapping("/{id}") void delete(@PathVariable("id") UUID id){purchases.deletepurchase(id);}    
 }

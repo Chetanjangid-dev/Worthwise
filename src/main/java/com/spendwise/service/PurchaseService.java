@@ -68,6 +68,55 @@ public class PurchaseService {
      return  evaluate(user, req);
     }
 
+
+  /**
+   * "Done this purchase": the user confirms they actually bought it.
+   * - BUY_NOW decision: apply the purchase to the profile directly.
+   * - WAIT / DONT_BUY / CONSIDER_ALTERNATIVE: only allowed if savings (and, for EMI, surplus) stay above 0.
+   * Effect on the profile: one-time -> savings -= price; EMI -> savings -= down payment and the monthly EMI
+   * is added to existing EMI (so monthly surplus drops by the EMI).
+   */
+  @Transactional
+  public DecisionItem markPurchased(AppUser user, UUID id) {
+    PurchaseDecision pd = decisions.findByIdAndUser(id, user)
+        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Purchase decision not found"));
+    if (pd.isPurchased())
+      throw new ApiException(HttpStatus.BAD_REQUEST, "You have already marked this purchase as done.");
+    FinancialProfile profile = profiles.entity(user);
+    boolean emi = pd.getPurchaseType() == PurchaseType.EMI && nz(pd.getMonthlyEmi()).signum() > 0;
+    BigDecimal upfront = emi ? nz(pd.getDownPayment()) : nz(pd.getPrice());   // leaves savings now
+    BigDecimal monthly = emi ? nz(pd.getMonthlyEmi()) : BigDecimal.ZERO;      // reduces monthly surplus
+    BigDecimal savingsAfter = profile.getCurrentSavings().subtract(upfront);
+    BigDecimal surplusNow = profile.getMonthlyIncome().subtract(ProfileService.expenses(profile));
+    BigDecimal surplusAfter = surplusNow.subtract(monthly);
+
+    // Hard rule for EVERY decision (even BUY_NOW): the profile must never go negative,
+    // otherwise later analyses become meaningless.
+    if (savingsAfter.signum() < 0 || surplusAfter.signum() < 0)
+      throw new ApiException(HttpStatus.BAD_REQUEST,
+          "This purchase would make your savings or monthly surplus negative (savings after: \u20b9"
+          + savingsAfter.setScale(0, java.math.RoundingMode.HALF_UP) + ", monthly surplus after: \u20b9"
+          + surplusAfter.setScale(0, java.math.RoundingMode.HALF_UP) + "). "
+          + "Your profile was not changed, because a negative balance can lead to strange analysis. "
+          + "Please update your profile (savings / income / expenses) first if your finances have changed.");
+
+    if (pd.getDecision() != Decision.BUY_NOW) {
+      boolean savingsOk = upfront.signum() == 0 || savingsAfter.signum() > 0;
+      boolean surplusOk = monthly.signum() == 0 || surplusAfter.signum() > 0;
+      if (!savingsOk || !surplusOk)
+        throw new ApiException(HttpStatus.BAD_REQUEST,
+            "You don't have enough money in your savings or monthly surplus to afford this purchase. "
+            + "Buying it is not an option right now (it is impossible with your current profile) \u2014 "
+            + "please update your profile first if your finances have changed.");
+    }
+    profile.setCurrentSavings(savingsAfter);
+    if (monthly.signum() > 0) profile.setExistingEmi(profile.getExistingEmi().add(monthly));
+    pd.setPurchased(true);
+    pd.setPurchasedAt(java.time.Instant.now());
+    decisions.save(pd);
+    return toItem(pd);
+  }
+
   public List<DecisionItem> history(AppUser user) {
     return decisions.findByUserOrderByCreatedAtDesc(user).stream().map(this::toItem).toList();
   }
@@ -103,7 +152,7 @@ public class PurchaseService {
         List.of(new ReasonResponse("positive", p.getExplanation())), List.of(), List.of(), p.getExplanation(), null);
     return new DecisionItem(new PurchaseSummary(p.getId().toString(), p.getProductName(), p.getCategory(), p.getPrice(), p.getPurchaseType(),
         p.getReason(), p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate().toString(),
-        p.getMonthlyEmi(), p.getDurationMonths(), p.getProductUrl(), nz(p.getDownPayment())), r);
+        p.getMonthlyEmi(), p.getDurationMonths(), p.getProductUrl(), nz(p.getDownPayment()), p.isPurchased()), r);
   }
   private DecisionResponse withId(PurchaseDecision p, DecisionResponse r, String explanation, MarketResearchResponse market) {
     return new DecisionResponse(p.getId().toString(), r.decision(), r.score(), r.affordability(), r.financialImpact(), r.goalImpact(),
