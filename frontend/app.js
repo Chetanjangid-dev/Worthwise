@@ -1096,10 +1096,10 @@ function renderSnapshot(profile){
   const expenses = Number(profile.monthlyExpenses || 0);
   const savings = Number(profile.currentSavings || 0);
   const emergencyTarget = Number(profile.emergencyFundTarget || 0);
+  const emergencyPct = emergencyTarget > 0 ? Math.round(Math.min(savings / emergencyTarget * 100, 999)) : 0;
   const surplus = income - expenses;
   const expenseRatio = income > 0 ? Math.round(expenses / income * 100) : 0;
   const savingsRate = income > 0 ? Math.round(Math.max(surplus, 0) / income * 100) : 0;
-  const emergencyPct = emergencyTarget > 0 ? Math.round(Math.min(savings / emergencyTarget * 100, 999)) : 0;
   const cards = [
     { title: 'Monthly Income', target: 'in-income', value: income, icon: 'income', indicator: income > 0 ? 'Saved in your profile' : 'Add income in profile', tone: 'flat' },
     { title: 'Monthly Expenses', target: 'expense', value: expenses, icon: 'expense', indicator: `${expenseRatio}% of income`, tone: expenseRatio > 80 ? 'down' : 'flat' },
@@ -1647,39 +1647,6 @@ function emptyState(title, body){
         </div>
       </div>
 
-      <div class="card mt-24 fade-up">
-        <h2 class="section-title">What if you change the plan?</h2>
-        <p class="section-sub">Drag to see how waiting, saving more, or a discount changes the outcome.</p>
-        <div class="sim-grid">
-          <div>
-            <div class="sim-control">
-              <div class="sc-top"><span>Wait before buying</span><strong id="sim-wait-val">0 months</strong></div>
-              <input type="range" id="sim-wait" min="0" max="6" step="1" value="0">
-            </div>
-            <div class="sim-control">
-              <div class="sc-top"><span>Monthly additional saving</span><strong id="sim-save-val">₹0</strong></div>
-              <input type="range" id="sim-save" min="0" max="10000" step="500" value="0">
-            </div>
-            <div class="sim-control">
-              <div class="sc-top"><span>Product discount</span><strong id="sim-disc-val">₹0</strong></div>
-              <input type="range" id="sim-disc" min="0" max="20000" step="1000" value="0">
-            </div>
-          </div>
-          <div class="sim-result">
-            <div class="sim-result-grid">
-              <div class="sim-result-item"><div class="sr-label">Estimated purchase date</div><div class="sr-value" id="sim-purchase-date">—</div></div>
-              <div class="sim-result-item"><div class="sr-label">Goal completion date</div><div class="sr-value" id="sim-goal-date">—</div></div>
-              <div class="sim-result-item"><div class="sr-label">Savings after purchase</div><div class="sr-value" id="sim-savings">—</div></div>
-              <div class="sim-result-item"><div class="sr-label">Monthly surplus</div><div class="sr-value" id="sim-surplus">—</div></div>
-            </div>
-            <div class="sim-verdict">
-              <div class="sv-label">Recommendation</div>
-              <div class="sv-word" id="sim-decision">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       ${betterOptionsHTML(purchase, analysis)}
 
       ${marketResearchHTML(analysis.marketResearch, purchase, analysis)}
@@ -1711,7 +1678,6 @@ function emptyState(title, body){
     `;
 
     renderTimeline(purchase, profile, analysis);
-    initSimulator(purchase, profile, goal);
 
     typewriter(
       document.getElementById('ai-response-text'),
@@ -1787,39 +1753,6 @@ function emptyState(title, body){
           ${isLast ? `<div class="tl-sub">Based on your current savings rate, you're estimated to reach a comfortable purchase point around ${Fmt.fullMonth(analysis.estimatedPurchaseDate)}.</div>` : ''}
         </div>`;
     }).join('');
-  }
-
-  function initSimulator(purchase, profile, goal){
-    goal = withGoalFallback(goal, profile);
-    const waitEl = document.getElementById('sim-wait');
-    const saveEl = document.getElementById('sim-save');
-    const discEl = document.getElementById('sim-disc');
-
-    function update(){
-      const waitMonths = Number(waitEl.value);
-      const extraSaving = Number(saveEl.value);
-      const discount = Number(discEl.value);
-
-      document.getElementById('sim-wait-val').textContent = `${waitMonths} month${waitMonths === 1 ? '' : 's'}`;
-      document.getElementById('sim-save-val').textContent = Fmt.currency(extraSaving);
-      document.getElementById('sim-disc-val').textContent = Fmt.currency(discount);
-
-      const result = DecisionEngineMock.simulate(purchase, profile, goal, { waitMonths, extraSaving, discount });
-
-      document.getElementById('sim-purchase-date').textContent = Fmt.compactMonth(result.estimatedPurchaseDate);
-      document.getElementById('sim-goal-date').textContent = Fmt.compactMonth(result.goalCompletionDate);
-      document.getElementById('sim-savings').textContent = Fmt.currency(result.savingsAfterPurchase);
-      document.getElementById('sim-surplus').textContent = Fmt.currency(result.monthlySurplusAfterPurchase);
-
-      const meta = decisionMeta(result.decision) || decisionMeta('WAIT');
-      const word = waitMonths > 0 && result.decision === 'BUY' ? 'BUY AFTER WAITING' : meta.word;
-      const decisionWordEl = document.getElementById('sim-decision');
-      decisionWordEl.textContent = word;
-      decisionWordEl.style.color = meta.color;
-    }
-
-    [waitEl, saveEl, discEl].forEach(el => el.addEventListener('input', update));
-    update();
   }
 })();
 (function(){
@@ -2269,6 +2202,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHealthStatus(profileState);
     document.getElementById('in-income').value = profileState.monthlyIncome;
     document.getElementById('in-savings').value = profileState.currentSavings;
+    document.getElementById('in-emergency').value = profileState.emergencyFundTarget || '';
+    updateEmergencyNote();
 
     document.getElementById('expense-fields').innerHTML = Object.entries(profileState.expenseBreakdown).map(([key, val]) => `
       <div class="expense-row">
@@ -2277,19 +2212,32 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `).join('');
 
-    document.getElementById('commitments-list').innerHTML = profileState.commitments.length ? profileState.commitments.map(c => `
-      <div class="commitment-row">
-        <span>${c.name}</span>
-        <span class="num">${Fmt.currency(c.monthlyAmount)}/mo${c.remainingMonths ? ` · ${c.remainingMonths} mo left` : ''}</span>
-      </div>
-    `).join('') : `<div class="commitment-row"><span>No monthly commitments saved yet</span><span class="badge badge-neutral">Clean</span></div>`;
-
     setActivePill('pref-risk', profileState.preferences.riskTolerance);
     setActivePill('pref-priority', profileState.preferences.savingPriority);
     setActivePill('pref-purchase', profileState.preferences.purchasePreference);
   }
   window.SpendWiseProfile = { reinit: loadProfilePage };
   document.addEventListener('DOMContentLoaded', loadProfilePage);
+
+  // Savings is the TOTAL and already includes the emergency fund. Nothing is deducted;
+  // we only make sure the fund isn't larger than the savings.
+  const EF_DEFAULT_NOTE = 'Your savings already include this emergency fund. Future predictions will treat it as protected money and warn you when a purchase would eat into it.';
+  function emergencyPreview(){
+    const savings = Number(document.getElementById('in-savings').value) || 0;
+    const emergency = Number(document.getElementById('in-emergency').value) || 0;
+    const stored = Number((profileState && profileState.emergencyFundTarget) || 0);
+    return { savings, emergency, changed: emergency !== stored, tooHigh: emergency > savings };
+  }
+  function updateEmergencyNote(){
+    const note = document.getElementById('emergency-note');
+    if (!note) return;
+    const { savings, emergency, tooHigh } = emergencyPreview();
+    note.style.color = '';
+    if (emergency < 0) { note.textContent = 'Emergency fund cannot be negative.'; note.style.color = 'var(--skip)'; }
+    else if (tooHigh) { note.textContent = `Emergency fund can't be more than your savings (${Fmt.currency(savings)}).`; note.style.color = 'var(--skip)'; }
+    else note.textContent = EF_DEFAULT_NOTE;
+  }
+  ['in-savings', 'in-emergency'].forEach(id => document.getElementById(id)?.addEventListener('input', updateEmergencyNote));
 
   function setActivePill(groupId, val){
     const group = document.getElementById(groupId);
@@ -2315,6 +2263,12 @@ document.addEventListener('DOMContentLoaded', () => {
       expenseTotal += v;
     });
     expenseTotal += Number((typeof profileState !== 'undefined' && profileState && profileState.existingEmi) || 0);
+    const ef = emergencyPreview();
+    if (ef.emergency < 0) hasNegative = true;
+    if (ef.changed && ef.tooHigh) {
+      statusEl.textContent = `Emergency fund can't be more than your savings (${Fmt.currency(ef.savings)}).`;
+      return;
+    }
     if (hasNegative) { statusEl.textContent = 'Income, savings and expenses cannot be negative.'; return; }
     if (incomeVal - expenseTotal < 0) {
       statusEl.textContent = 'Your expenses are higher than your income (negative monthly surplus). Please correct them.';
@@ -2329,6 +2283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const patch = {
       monthlyIncome: Number(document.getElementById('in-income').value),
       currentSavings: Number(document.getElementById('in-savings').value),
+      emergencyFundTarget: Number(document.getElementById('in-emergency').value) || 0,
       expenseBreakdown,
       riskTolerance: activeValue('pref-risk'),
       savingPriority: activeValue('pref-priority'),
@@ -2336,6 +2291,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     try {
       const savedProfile = await SpendWiseAPI.updateFinancialProfile(patch);
+      profileState = savedProfile;
+      document.getElementById('in-savings').value = savedProfile.currentSavings;
+      document.getElementById('in-emergency').value = savedProfile.emergencyFundTarget || '';
+      updateEmergencyNote();
       renderSnapshot(savedProfile);
       renderHealth(currentUserCache, savedProfile);
       document.getElementById('save-status').textContent = 'Saved just now';

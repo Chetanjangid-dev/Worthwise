@@ -26,7 +26,15 @@ public class ProfileService {
     FinancialProfile p = entity(user);
     if (req.monthlyIncome() != null) p.setMonthlyIncome(req.monthlyIncome());
     if (req.currentSavings() != null) p.setCurrentSavings(req.currentSavings());
-    if (req.emergencyFundTarget() != null) p.setEmergencyFundTarget(req.emergencyFundTarget());
+    if (req.emergencyFundTarget() != null) {
+      // Savings is the TOTAL and already contains the emergency fund, so a newly entered fund can't exceed it.
+      boolean changed = req.emergencyFundTarget().compareTo(p.getEmergencyFundTarget()) != 0;
+      if (changed && req.emergencyFundTarget().compareTo(p.getCurrentSavings()) > 0)
+        throw new ApiException(HttpStatus.BAD_REQUEST,
+            "Your emergency fund cannot be more than your savings (\u20b9"
+            + p.getCurrentSavings().setScale(0, RoundingMode.HALF_UP) + "). Lower the emergency fund or increase your savings.");
+      p.setEmergencyFundTarget(req.emergencyFundTarget());
+    }
     if (req.existingEmi() != null) p.setExistingEmi(req.existingEmi());
     if (req.expenseBreakdown() != null) {
       Map<String, BigDecimal> e = req.expenseBreakdown();

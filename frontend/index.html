@@ -224,7 +224,7 @@
   <div class="item reveal">
     <img class="vi" src="https://cdn-icons-png.flaticon.com/512/584/584026.png" alt="" width="44" height="44" loading="lazy"><div class="n">Affordability</div>
     <h3>Beyond your bank balance</h3>
-    <p>Worthwise checks cash flow, savings buffer, and existing commitments — not just whether the money is sitting in your account today.</p>
+    <p>Worthwise checks cash flow, savings buffer, and existing EMIs — not just whether the money is sitting in your account today.</p>
   </div>
   <div class="item reveal">
     <img class="vi" src="https://cdn-icons-png.flaticon.com/512/860/860511.png" alt="" width="44" height="44" loading="lazy"><div class="n">Goal impact</div>
@@ -234,7 +234,7 @@
   <div class="item reveal">
     <svg class="vi" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#818CF8"/><circle cx="12" cy="12" r="7.6" fill="#EEF2FF"/><path d="M12 7v5.2l3.4 2" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="n">Timing</div>
     <h3>Buy now, wait, or skip</h3>
-    <p>A clear, explainable verdict — with a simulator to see how waiting, saving more, or a discount changes the outcome.</p>
+    <p>A clear, explainable verdict — with a recommended wait time and a safe price range for your budget.</p>
   </div>
 </section>
 
@@ -593,7 +593,6 @@
           <a href="javascript:void(0)" data-scroll-target="income-card">Income</a>
           <a href="javascript:void(0)" data-scroll-target="expenses-card">Expenses</a>
           <a href="javascript:void(0)" data-scroll-target="savings-card">Savings</a>
-          <a href="javascript:void(0)" data-scroll-target="commitments-card">Commitments</a>
           <a href="javascript:void(0)" data-scroll-target="preferences-card">Preferences</a>
           <a href="javascript:void(0)" data-scroll-target="settings-card" id="settings">Settings</a>
         </nav>
@@ -618,16 +617,14 @@
             <h2 class="section-title">Savings</h2>
             <p class="section-sub">What you currently hold in savings or liquid investments.</p>
             <div class="field" style="max-width:280px;">
-              <label>Current savings</label>
-              <div class="input-prefix"><span>₹</span><input class="input" id="in-savings" type="number"></div>
+              <label>Current savings (total, including emergency fund)</label>
+              <div class="input-prefix"><span>₹</span><input class="input" id="in-savings" type="number" min="0"></div>
             </div>
-          </div>
-
-          <div class="card profile-section" id="commitments-card">
-            <h2 class="section-title">Commitments</h2>
-            <p class="section-sub">Loans, EMIs, and subscriptions already reducing your surplus.</p>
-            <div id="commitments-list"></div>
-            <button class="btn btn-ghost btn-sm mt-16">+ Add commitment</button>
+            <div class="field" style="max-width:280px; margin-top:16px;">
+              <label>Emergency fund</label>
+              <div class="input-prefix"><span>₹</span><input class="input" id="in-emergency" type="number" min="0" placeholder="0"></div>
+            </div>
+            <p class="section-sub" id="emergency-note" style="margin:10px 0 0; font-size:13.5px;">Your savings already include this emergency fund. Future predictions will treat it as protected money and warn you when a purchase would eat into it.</p>
           </div>
 
           <div class="card profile-section" id="preferences-card">
