@@ -99,9 +99,10 @@ const SpendWiseAPI = (() => {
   // ---------------------------------------------------------------
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-  // ⚠️ IMPORTANT: replace with your actual Render backend URL (no trailing slash).
-const API_BASE = 'https://worthwise-snwh.onrender.com/api';
-//const API_BASE = 'http://localhost:5000/api';
+  // Local machine -> local backend. Anywhere else (Vercel etc.) -> Render backend (no trailing slash).
+const API_BASE = ['localhost', '127.0.0.1', ''].includes(window.location.hostname)
+  ? 'http://localhost:5000/api'
+  : 'https://worthwise-snwh.onrender.com/api';
   
 
   let authToken = localStorage.getItem('spendwise_token') || '';
@@ -2646,14 +2647,14 @@ async function refreshDemoBanner(){
   if (!el) {
     el = document.createElement('div');
     el.id = 'demo-banner';
-    el.style.cssText = 'position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:300; max-width:calc(100vw - 24px); padding:9px 18px; border-radius:999px; background:var(--pine,#1f6f5a); color:#fff; font-size:13.5px; font-weight:600; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,.25);';
+    el.style.cssText = 'position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:300; max-width:calc(100vw - 24px); padding:9px 18px; border-radius:999px; background:var(--pine,#3F3187); color:var(--on-pine,#fff); font-size:13.5px; font-weight:600; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,.25);';
     document.body.appendChild(el);
   }
   const left = Number(user.demoEvaluationsLeft || 0);
   el.innerHTML = (left > 0
     ? `Demo mode &middot; ${left} of 2 analyses left`
     : 'Demo finished &middot; both analyses used')
-    + ' &middot; <a href="javascript:void(0)" id="demo-signup" style="color:#fff; text-decoration:underline;">Create a free account</a>';
+    + ' &middot; <a href="javascript:void(0)" id="demo-signup" style="color:inherit; text-decoration:underline;">Create a free account</a>';
   document.getElementById('demo-signup').onclick = () => { SpendWiseAPI.logout(); window.location.reload(); };
 
   // Pre-fill a sample purchase so the visitor can just press Continue and then Analyze.

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0A0A0A">
 <title>Worthwise — Think before you spend.</title>
 <script>
   // Apply saved theme before CSS paints, so there's no flash of the wrong theme.
@@ -14,7 +15,7 @@
     } catch (e) {}
   })();
 </script>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=mono1">
 </head>
 <body>
 
@@ -22,19 +23,16 @@
 <div id="wake-overlay" style="
   position:fixed; inset:0; z-index:99999; display:flex; flex-direction:column;
   align-items:center; justify-content:center; text-align:center;
-  background:radial-gradient(circle at 50% 30%, #10151A 0%, #0A0C0F 65%);
-  color:#F2F5F4; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:#0A0A0A;
+  color:#F3F0FA; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
   padding:24px; overflow:hidden;">
-
-  <div class="wake-aurora wake-a1"></div>
-  <div class="wake-aurora wake-a2"></div>
 
   <div style="position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:20px; max-width:460px;">
 
     <div style="position:relative; width:76px; height:76px; display:flex; align-items:center; justify-content:center;">
       <svg width="76" height="76" viewBox="0 0 76 76" style="position:absolute; inset:0; animation: wake-spin 1.6s linear infinite;">
-        <circle cx="38" cy="38" r="33" fill="none" stroke="rgba(47,209,150,0.15)" stroke-width="3"/>
-        <circle cx="38" cy="38" r="33" fill="none" stroke="#2FD196" stroke-width="3" stroke-linecap="round"
+        <circle cx="38" cy="38" r="33" fill="none" stroke="rgba(241,236,255,0.15)" stroke-width="3"/>
+        <circle cx="38" cy="38" r="33" fill="none" stroke="#F1ECFF" stroke-width="3" stroke-linecap="round"
           stroke-dasharray="207" stroke-dashoffset="155"/>
       </svg>
       <svg class="wake-logo" width="30" height="30" viewBox="0 0 26 26" fill="none">
@@ -47,18 +45,18 @@
 
     <div>
       <div style="font-size:1.2rem; font-weight:700; letter-spacing:-0.01em;">Waking up Worthwise</div>
-      <div id="wake-msg" style="margin-top:8px; color:#9aa4a1; font-size:0.95rem; line-height:1.55;">
+      <div id="wake-msg" style="margin-top:8px; color:#C2BADB; font-size:0.95rem; line-height:1.55;">
         Just getting your numbers ready. This takes a few seconds the first time you open Worthwise.
       </div>
     </div>
 
     <div style="width:100%; max-width:280px; height:4px; border-radius:4px; background:rgba(255,255,255,0.08); overflow:hidden;">
-      <div id="wake-bar" style="height:100%; width:12%; border-radius:4px; background:linear-gradient(90deg,#1B9E75,#2FD196); transition:width 1.8s ease;"></div>
+      <div id="wake-bar" style="height:100%; width:12%; border-radius:4px; background:#F1ECFF; transition:width 1.8s ease;"></div>
     </div>
 
-    <div style="display:flex; align-items:center; gap:8px; color:#5c6663; font-size:0.8rem;">
+    <div style="display:flex; align-items:center; gap:8px; color:#A097C2; font-size:0.8rem;">
       <span id="wake-elapsed"></span>
-      <span id="wake-tip" style="color:#7a847f;"></span>
+      <span id="wake-tip" style="color:#A097C2;"></span>
     </div>
 
   </div>
@@ -72,9 +70,6 @@
       100% { transform: translate(0,0) scale(1); }
     }
     .wake-logo { animation: wake-pulse 1.6s ease-in-out infinite; }
-    .wake-aurora { position:absolute; border-radius:50%; filter:blur(70px); opacity:0.35; pointer-events:none; }
-    .wake-a1 { width:340px; height:340px; background:#2FD196; top:-120px; left:-100px; animation: wake-drift 9s ease-in-out infinite; }
-    .wake-a2 { width:300px; height:300px; background:#4C6FFF; bottom:-130px; right:-90px; animation: wake-drift 11s ease-in-out infinite reverse; }
   </style>
 </div>
 
@@ -144,7 +139,6 @@
 
 <!-- ===================== LANDING PAGE ===================== -->
 <div id="view-landing">
-<div class="aurora-bg"><div class="aurora-blob a1"></div><div class="aurora-blob a2"></div><div class="aurora-blob a3"></div></div>
 <div class="landing-nav">
   <div class="logo">
     <svg class="logo-mark" width="28" height="28" viewBox="0 0 26 26" fill="none">
@@ -169,7 +163,6 @@
 </div>
 
 <section class="hero fade-up">
-  <div class="eyebrow">Personal Purchase Decision Engine</div>
   <h1>Think before <em>you spend.</em></h1>
   <p class="lead">Make purchases that fit your life — not just your budget. Worthwise weighs every purchase against your income, goals, and future plans before you buy.</p>
   <div class="hero-ctas">
@@ -220,6 +213,19 @@
 
   </div>
 </div>
+
+<section class="tilt-section" aria-label="Sample decisions">
+  <p class="tilt-cap">Sample decisions, as they appear in your history</p>
+  <div class="tilt-stage"><div class="tilt-table" role="table">
+    <div class="tilt-row head" role="row"><span>Purchase</span><span>Price</span><span>Verdict</span><span>Goal impact</span><span>Date</span></div>
+    <div class="tilt-row" role="row"><span>iPhone 16<small>New phone</small></span><span>₹79,900</span><span><span class="tilt-pill wait">Wait</span></span><span>Wait 2 months</span><span>12 Oct</span></div>
+    <div class="tilt-row" role="row"><span>Running shoes<small>Footwear</small></span><span>₹4,500</span><span><span class="tilt-pill buy">Buy</span></span><span>On track</span><span>10 Oct</span></div>
+    <div class="tilt-row" role="row"><span>Gaming laptop<small>Electronics</small></span><span>₹1,20,000</span><span><span class="tilt-pill skip">Skip</span></span><span>Delays goal 7 months</span><span>08 Oct</span></div>
+    <div class="tilt-row" role="row"><span>Headphones<small>Audio</small></span><span>₹8,999</span><span><span class="tilt-pill buy">Buy</span></span><span>On track</span><span>05 Oct</span></div>
+    <div class="tilt-row" role="row"><span>Goa weekend trip<small>Travel</small></span><span>₹15,000</span><span><span class="tilt-pill wait">Wait</span></span><span>Wait 1 month</span><span>02 Oct</span></div>
+    <div class="tilt-row" role="row"><span>Standing desk<small>Home office</small></span><span>₹22,000</span><span><span class="tilt-pill buy">Buy</span></span><span>Delays goal 1 week</span><span>29 Sep</span></div>
+  </div></div>
+</section>
 
 <section class="value-strip" id="value">
   <div class="item reveal">
@@ -698,6 +704,6 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=mono1"></script>
 </body>
 </html>
