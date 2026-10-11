@@ -707,7 +707,7 @@ input[type="range"]::-moz-range-thumb{
   .hero-ctas{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
 
   .hero-visual{
-    max-width: 880px; margin: 46px auto 0; padding: 0 24px;
+    max-width: 880px; margin: 72px auto 0; padding: 0 24px;
   }
 
   /* FIX (issue 1): the hero-frame previously relied on plain document
@@ -1006,14 +1006,14 @@ input[type="range"]::-moz-range-thumb{
 .wallet-anim-module{
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 240px;
   margin: 0 auto;
   overflow: hidden;
 }
 
 .wallet-anim-module .wallet-container{
   position: absolute;
-  bottom: 24px;
+  bottom: 14px;
   left: 60px;
   width: 140px;
   height: 90px;
@@ -1056,7 +1056,7 @@ input[type="range"]::-moz-range-thumb{
    outside the clipped module. Only the horizontal value changes on the
    narrow-screen breakpoint below, matching the wallet-container shift. */
 .wallet-anim-module .human-arm{
-  position: absolute; bottom: 34px; left: 95px; width: 70px; z-index: 4;
+  position: absolute; bottom: 24px; left: 95px; width: 70px; z-index: 4;
   transform-origin: 50% 0%;
   animation: walletArmStory 12s infinite ease-in-out;
 }
@@ -1130,7 +1130,7 @@ input[type="range"]::-moz-range-thumb{
   82%, 100% { transform: translateY(-50%) scale(0); opacity: 0; }
 }
 @media (max-width: 560px){
-  .wallet-anim-module{ height: 190px; }
+  .wallet-anim-module{ height: 210px; }
   .wallet-anim-module .wallet-container{ left: 20px; }
   .wallet-anim-module .human-arm{ left: 55px; } /* mirrors the wallet's 40px shift above */
   .wallet-anim-module .alert-popup{ right: 12px; width: 50%; padding: 10px 12px; }
@@ -1578,18 +1578,6 @@ html[data-theme="light"] .landing-nav{ background:rgba(255,255,255,0.8); }
 @media (max-width:480px){ .hero h1{ font-size:36px; } }
 .hero-frame{ border-radius:var(--radius-lg); box-shadow:none; background:var(--surface); }
 
-/* tilted decisions preview */
-.tilt-section{ max-width:1000px; margin:56px auto 0; padding:0 20px; }
-.tilt-cap{ text-align:center; color:var(--ink-faint); font-size:14px; margin:0 auto 18px; }
-.tilt-stage{ perspective:1100px; height:clamp(230px,32vw,400px); overflow:hidden;
-  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 38%,transparent 94%); mask-image:linear-gradient(to bottom,#000 0%,#000 38%,transparent 94%); }
-.tilt-table{ transform:rotateX(52deg) scale(.97); transform-origin:50% 0; border:1px solid var(--border-strong); border-radius:var(--radius-md); background:var(--surface); overflow:hidden; }
-.tilt-row{ display:grid; grid-template-columns:2.2fr 1.2fr 1fr 1.6fr 1fr; align-items:center; gap:12px; padding:16px 22px; border-top:1px solid var(--border); font-size:15px; color:var(--ink); font-variant-numeric:lining-nums tabular-nums; }
-.tilt-row.head{ border-top:0; color:var(--ink-faint); font-size:13px; font-weight:600; }
-.tilt-row small{ display:block; color:var(--ink-faint); font-size:12.5px; margin-top:2px; }
-.tilt-pill{ display:inline-block; padding:4px 12px; border-radius:999px; font-size:13px; font-weight:600; border:1px solid currentColor; }
-.tilt-pill.buy{ color:var(--buy); background:var(--buy-soft); } .tilt-pill.wait{ color:var(--wait); background:var(--wait-soft); } .tilt-pill.skip{ color:var(--skip); background:var(--skip-soft); }
-@media (max-width:640px){ .tilt-row{ grid-template-columns:2fr 1fr 1fr; padding:12px 14px; font-size:14px; } .tilt-row > :nth-child(3), .tilt-row > :nth-child(5){ display:none; } }
 
 /* motion: responds to the user, existing animations untouched */
 .fade-up{ animation:none; } .reveal{ opacity:1; transform:none; transition:none; }
@@ -1599,3 +1587,54 @@ html[data-theme="light"] .landing-nav{ background:rgba(255,255,255,0.8); }
 .error,.form-error,.ww-modal-err{ color:var(--skip); }
 :focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
 ::selection{ background:var(--indigo-soft); color:var(--ink); }
+
+/* tilted decisions preview — full-bleed, auto-scrolling, sits right under the hero text */
+.tilt-section{ width:100%; max-width:none; margin:14px 0 0; padding:0; overflow:hidden; }
+.tilt-stage{ position:relative; perspective:1000px; height:clamp(300px,34vw,470px); overflow:hidden;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 55%,transparent 97%); mask-image:linear-gradient(to bottom,#000 0%,#000 55%,transparent 97%); }
+.tilt-table{ position:relative; left:50%; width:max(1180px,88vw); transform:translateX(-50%) rotateX(53deg) scale(.98); transform-origin:50% 0; }
+.tt-row{ display:grid; grid-template-columns:2.3fr 1.2fr 1.7fr 1.7fr 1.3fr 18px; align-items:center; gap:14px; padding:18px 2% 18px 7.5%;
+  border-top:1px solid var(--border); font-size:15px; color:var(--ink); font-variant-numeric:lining-nums tabular-nums; font-style:italic; }
+.tt-head{ border-top:0; border-bottom:1px solid var(--border-strong); padding-top:0; color:var(--ink-faint); font-size:13px; }
+.tt-head > span{ display:flex; align-items:center; gap:8px; }
+.tt-name{ display:flex; align-items:center; gap:14px; }
+.tt-name b{ display:block; font-weight:700; }
+.tt-name small{ display:block; color:var(--ink-faint); font-size:13px; margin-top:2px; }
+.tt-thumb{ width:62px; height:40px; border-radius:12px; background:var(--surface-sunk); border:1px solid var(--border-strong); position:relative; flex:none; }
+.tt-thumb::after{ content:''; position:absolute; inset:11px 15px; border-radius:7px; background:var(--border-strong); }
+.tt-surplus em{ color:var(--skip); font-style:normal; margin-right:4px; }
+.tt-goal{ display:flex; align-items:center; gap:10px; }
+.tt-ring{ width:12px; height:12px; border-radius:50%; border:1.5px solid var(--ink-faint); flex:none; display:inline-block; }
+.tt-pill{ display:inline-block; padding:5px 14px; border-radius:999px; font-size:13.5px; font-weight:600; border:1px solid currentColor; white-space:nowrap; }
+.tt-pill.buy{ color:var(--buy); background:var(--buy-soft); } .tt-pill.wait{ color:var(--wait); background:var(--wait-soft); } .tt-pill.skip{ color:var(--skip); background:var(--skip-soft); }
+.tt-chev{ color:var(--ink-faint); text-align:right; }
+.tt-view{ overflow:hidden; height:clamp(420px,46vw,640px); }
+.tt-track{ animation:ttScroll 22s linear infinite; will-change:transform; }
+.tt-dup{ display:contents; }
+@keyframes ttScroll{ from{ transform:translateY(0); } to{ transform:translateY(-50%); } }
+@media (max-width:640px){
+  .tilt-section{ margin-top:8px; }
+  .tilt-stage{ height:340px; perspective:1500px; }
+  .tilt-table{ width:max(340px,106vw); transform:translateX(-50%) rotateX(42deg) scale(1); }
+  .tt-row{ grid-template-columns:1.8fr .8fr 1.5fr; gap:4px; padding:13px 4% 13px 9%; font-size:12.5px; }
+  .tt-name b{ white-space:nowrap; } .tt-thumb{ display:none; }
+  .tt-thumb{ width:38px; height:26px; border-radius:8px; } .tt-thumb::after{ inset:7px 9px; border-radius:4px; } .tt-name{ gap:8px; } .tt-pill{ font-size:10.5px; padding:4px 8px; }
+  .tt-row > :nth-child(3), .tt-row > :nth-child(4), .tt-row > :nth-child(6){ display:none; }
+}
+@media (prefers-reduced-motion:reduce){ .tt-track{ animation:none; } }
+
+
+/* hero headline: editorial serif */
+.hero h1{ font-family:'Playfair Display','Cormorant Garamond',Georgia,'Times New Roman',serif; font-weight:400; font-size:clamp(40px,5vw,68px); line-height:1.1; letter-spacing:-0.005em; color:var(--ink); margin-bottom:22px; }
+.hero h1 em{ font-style:italic; font-weight:400; color:var(--ink-faint); letter-spacing:0; }
+/* keep both phrases on one line on desktop, centered; wraps naturally on mobile */
+@media (min-width:900px){
+  .hero h1{ white-space:nowrap; text-align:center; margin-left:calc(50% - 49vw); margin-right:calc(50% - 49vw); }
+}
+
+/* typewriter for hero helper text */
+.tw-rest{ visibility:hidden; }
+.tw-caret{ display:inline-block; position:relative; width:0; height:1em; vertical-align:-0.14em; }
+.tw-caret::after{ content:''; position:absolute; left:1px; top:0; width:2px; height:100%; background:var(--ink); border-radius:1px; animation:twBlink2 1s steps(1) infinite; }
+.tw-caret.tw-done::after{ opacity:0; animation:none; transition:opacity .6s ease; }
+@keyframes twBlink2{ 0%,50%{ opacity:1; } 50.01%,100%{ opacity:0; } }
