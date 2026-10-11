@@ -1614,9 +1614,10 @@ html[data-theme="light"] .landing-nav{ background:rgba(255,255,255,0.8); }
 @keyframes ttScroll{ from{ transform:translateY(0); } to{ transform:translateY(-50%); } }
 @media (max-width:640px){
   .tilt-section{ margin-top:8px; }
-  .tilt-stage{ height:340px; perspective:1500px; }
-  .tilt-table{ width:max(340px,106vw); transform:translateX(-50%) rotateX(42deg) scale(1); }
-  .tt-row{ grid-template-columns:1.8fr .8fr 1.5fr; gap:4px; padding:13px 4% 13px 9%; font-size:12.5px; }
+  .tilt-stage{ height:min(560px,calc(100svh - 300px)); min-height:420px; perspective:950px; }
+  .tilt-table{ width:max(320px,92vw); transform:translateX(-50%) rotateX(50deg) scale(1); }
+  .tt-view{ height:780px; }
+  .tt-row{ grid-template-columns:1.8fr .8fr 1.5fr; gap:4px; padding:13px 8% 13px 7%; font-size:12.5px; }
   .tt-name b{ white-space:nowrap; } .tt-thumb{ display:none; }
   .tt-thumb{ width:38px; height:26px; border-radius:8px; } .tt-thumb::after{ inset:7px 9px; border-radius:4px; } .tt-name{ gap:8px; } .tt-pill{ font-size:10.5px; padding:4px 8px; }
   .tt-row > :nth-child(3), .tt-row > :nth-child(4), .tt-row > :nth-child(6){ display:none; }
