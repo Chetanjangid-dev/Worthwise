@@ -174,6 +174,7 @@
   <p class="lead">Make purchases that fit your life — not just your budget. Worthwise weighs every purchase against your income, goals, and future plans before you buy.</p>
   <div class="hero-ctas">
     <a href="#/auth" class="btn btn-primary btn-get-started">Get Started</a>
+    <a href="javascript:void(0)" class="btn btn-secondary" data-try-demo>Try Demo</a>
   </div>
 </section>
 
@@ -330,6 +331,8 @@
                 <div class="field"><label>Password</label><input class="input" id="login-password" type="password" required autocomplete="current-password"></div>
                 <button class="btn btn-primary btn-block btn-get-started" type="submit">Login</button>
               </form>
+              <div class="muted" style="text-align:center; font-size:13px; margin:14px 0 10px;">or</div>
+              <button class="btn btn-secondary btn-block" type="button" data-try-demo>Try demo, no signup</button>
               <p class="muted mt-16" style="text-align:center; font-size:13.5px;">New here? <a href="javascript:void(0)" data-auth-tab="register" style="color:var(--pine); font-weight:600;">Create an account</a></p>
             </div>
             <div class="auth-panel" id="panel-register" hidden>
@@ -347,8 +350,21 @@
                 </div>
                 <div class="field"><label>Email</label><input class="input" id="register-email" type="email" required autocomplete="email"></div>
                 <div class="field"><label>Password</label><input class="input" id="register-password" type="password" minlength="8" required autocomplete="new-password"></div>
-                <button class="btn btn-primary btn-block btn-get-started" type="submit">Create account</button>
+                <button class="btn btn-primary btn-block btn-get-started" type="submit">Send verification code</button>
               </form>
+              <form id="otp-form" hidden>
+                <p class="section-sub" id="otp-info" style="margin-bottom:14px;">Enter the 6-digit code we emailed you.</p>
+                <div class="field"><label>Verification code</label>
+                  <input class="input" id="otp-code" type="text" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" placeholder="123456" required style="letter-spacing:6px; font-size:20px; text-align:center;">
+                </div>
+                <button class="btn btn-primary btn-block btn-get-started" type="submit">Verify and create account</button>
+                <div class="flex-between" style="margin-top:14px; font-size:13.5px;">
+                  <a href="javascript:void(0)" id="otp-change" style="color:var(--pine); font-weight:600;">Change email</a>
+                  <a href="javascript:void(0)" id="otp-resend" style="color:var(--pine); font-weight:600;">Resend code</a>
+                </div>
+              </form>
+              <div class="muted" style="text-align:center; font-size:13px; margin:14px 0 10px;">or</div>
+              <button class="btn btn-secondary btn-block" type="button" data-try-demo>Try demo, no signup</button>
               <p class="muted mt-16" style="text-align:center; font-size:13.5px;">Already have an account? <a href="javascript:void(0)" data-auth-tab="login" style="color:var(--pine); font-weight:600;">Login</a></p>
             </div>
           </div>
@@ -379,6 +395,11 @@
       <section class="grid cols-2 mt-24" style="grid-template-columns: 1.1fr 1fr;">
         <div class="card" id="health-card"></div>
         <div class="card" id="goal-card"></div>
+      </section>
+
+      <!-- Monthly API usage -->
+      <section class="mt-24">
+        <div class="card" id="api-usage-card"></div>
       </section>
 
       <!-- Decisions + Planned -->

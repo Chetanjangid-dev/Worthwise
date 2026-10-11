@@ -52,7 +52,28 @@ public final class ApiDtos {
       LocalDate estimatedPurchaseDate, LocalDate goalCompletionDate, int goalDelayMonths,
       Map<String, BigDecimal> safePriceRange, List<String> reasonCodes,
       List<ReasonResponse> reasons, List<AlternativeResponse> alternatives,
-      List<String> actionPlan, String aiExplanation, MarketResearchResponse marketResearch) {}
+      List<String> actionPlan, String aiExplanation, MarketResearchResponse marketResearch,
+      /** Which paid APIs were skipped because the user's monthly limit is used up: "AI" and/or "SEARCH". */
+      List<String> apiLimitsReached) {
+    /** Same as before, for results that were not limited (engine output, history items). */
+    public DecisionResponse(String id, String decision, int score, String affordability, String financialImpact,
+        String goalImpact, BigDecimal purchasePrice, BigDecimal savingsAfterPurchase,
+        BigDecimal emergencyFundTarget, BigDecimal monthlySurplusBefore,
+        BigDecimal monthlySurplusAfterPurchase, int recommendedWaitMonths,
+        LocalDate estimatedPurchaseDate, LocalDate goalCompletionDate, int goalDelayMonths,
+        Map<String, BigDecimal> safePriceRange, List<String> reasonCodes,
+        List<ReasonResponse> reasons, List<AlternativeResponse> alternatives,
+        List<String> actionPlan, String aiExplanation, MarketResearchResponse marketResearch) {
+      this(id, decision, score, affordability, financialImpact, goalImpact, purchasePrice, savingsAfterPurchase,
+          emergencyFundTarget, monthlySurplusBefore, monthlySurplusAfterPurchase, recommendedWaitMonths,
+          estimatedPurchaseDate, goalCompletionDate, goalDelayMonths, safePriceRange, reasonCodes, reasons,
+          alternatives, actionPlan, aiExplanation, marketResearch, List.of());
+    }
+  }
+
+  /** One paid API's usage this month. */
+  public record ApiUsageItem(String api, String label, int used, int limit, int remaining) {}
+  public record ApiUsageResponse(String month, String resetsOn, List<ApiUsageItem> apis) {}
 
   public record MarketResearchResponse(String query, List<MarketResultResponse> results) {}
   public record MarketResultResponse(String title, String price, BigDecimal extractedPrice, String source,

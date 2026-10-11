@@ -17,6 +17,12 @@ public class AppUser {
   @Column(nullable = false) private Gender gender;
   @Column(nullable = false) private Instant createdAt = Instant.now();
   @Column(nullable = false) private Instant updatedAt = Instant.now();
+  /** Temporary "Try demo" account: pre-filled data, limited analyses, deleted automatically after 24h. */
+  @Column(nullable = false, columnDefinition = "boolean default false") private boolean demo = false;
+  private String demoIp;
+  /** Canonical email (Gmail dots / +tags removed) used to stop one mailbox making many accounts. Null for old accounts. */
+  private String emailKey;
+  @Column(nullable = false, columnDefinition = "integer default 0") private int demoEvaluations = 0;
 
   @PreUpdate void onUpdate(){ updatedAt = Instant.now(); }
   public UUID getId(){ return id; }
@@ -30,4 +36,11 @@ public class AppUser {
   public void setGender(Gender gender){ this.gender = gender; }
   public Instant getCreatedAt(){ return createdAt; }
   public Instant getUpdatedAt(){ return updatedAt; }
+  public String getEmailKey(){ return emailKey; }
+  public void setEmailKey(String emailKey){ this.emailKey = emailKey; }
+  public boolean isDemo(){ return demo; }
+  public void setDemo(boolean demo){ this.demo = demo; }
+  public String getDemoIp(){ return demoIp; }
+  public void setDemoIp(String demoIp){ this.demoIp = demoIp; }
+  public int getDemoEvaluations(){ return demoEvaluations; }
 }

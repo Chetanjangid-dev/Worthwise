@@ -21,27 +21,26 @@ public class AuthService {
   private final FinancialProfileRepository pfp;
   private  final GoalRepository goals;
   private  final PurchaseDecisionRepository pds;
+  private final ApiUsageRepository apiUsage;
  private  UserContext usercontext;
-  public AuthService(PurchaseDecisionRepository pds, GoalRepository goals,FinancialProfileRepository pfp, AppUserRepository users, FinancialProfileRepository profiles, PasswordEncoder encoder, JwtService jwt,UserContext usercontext) {
+  public AuthService(ApiUsageRepository apiUsage, PurchaseDecisionRepository pds, GoalRepository goals,FinancialProfileRepository pfp, AppUserRepository users, FinancialProfileRepository profiles, PasswordEncoder encoder, JwtService jwt,UserContext usercontext) {
     this.users = users; this.profiles = profiles; this.encoder = encoder; this.jwt = jwt;
     this.usercontext = usercontext;
     this.pfp =pfp;
     this.goals=goals;
     this.pds=pds;
+    this.apiUsage = apiUsage;
   }
 
+  /** Creates the real account. Only called by OtpService after the emailed code was entered correctly. */
   @Transactional
-  public AuthResponse register(RegisterRequest req) {
-    if (users.existsByEmail(req.email())) throw new ApiException(HttpStatus.CONFLICT, "Email already registered plz try a different one");
+  public AuthResponse createVerifiedUser(String email, String emailKey, String passwordHash, String name, Gender gender) {
     AppUser user = new AppUser();
-    user.setEmail(req.email().toLowerCase());
-    user.setPasswordHash(encoder.encode(req.password()));
-    user.setName(req.name().trim());
-    try {
-      user.setGender(Gender.valueOf(req.gender().trim().toUpperCase()));
-    } catch (IllegalArgumentException ex) {
-      throw new ApiException(HttpStatus.BAD_REQUEST, "Gender must be MALE, FEMALE or OTHER");
-    }
+    user.setEmail(email);
+    user.setEmailKey(emailKey);
+    user.setPasswordHash(passwordHash);
+    user.setName(name);
+    user.setGender(gender);
     users.save(user);
     FinancialProfile profile = new FinancialProfile();
     profile.setUser(user);
@@ -57,6 +56,7 @@ public class AuthService {
         goals.deleteAllByUserid(user);         
         pfp.deleteAllByUserid(user);
         pds.deleteAllByUserid(user);
+        apiUsage.deleteAllByUserid(user);
         users.delete(user);
       }
       else{
@@ -78,7 +78,8 @@ public class AuthService {
   public static UserResponse toUserResponse(AppUser user) {
     String name = user.getName() != null ? user.getName() : localName(user.getEmail());
     String gender = user.getGender() != null ? user.getGender().name() : null;
-    return new UserResponse(user.getId().toString(), user.getEmail(), name, gender, 0, "Set up profile");
+    int demoLeft = user.isDemo() ? Math.max(0, DemoService.MAX_EVALUATIONS - user.getDemoEvaluations()) : 0;
+    return new UserResponse(user.getId().toString(), user.getEmail(), name, gender, 0, "Set up profile", user.isDemo(), demoLeft);
   }
   public static String localName(String email){ return email.split("@")[0]; }
 }

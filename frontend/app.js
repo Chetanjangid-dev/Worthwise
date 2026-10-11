@@ -198,7 +198,16 @@ const API_BASE = 'https://worthwise-snwh.onrender.com/api';
     },
     isAuthenticated,
     async login(email, password){ return authenticate('/auth/login', { email, password }); },
-    async register(email, password, name, gender){ return authenticate('/auth/register', { email, password, name, gender }); },
+    // Signup with email OTP: 1) emails a code (no account yet), 2) the correct code creates the account and logs in.
+    async requestRegisterOtp(email, password, name, gender){
+      const res = await fetch(`${API_BASE}/auth/register/request`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, name, gender })
+      });
+      let data = null; try { data = await res.json(); } catch (_) {}
+      if (!res.ok) throw new Error((data && data.error) || 'Could not send the verification code');
+      return data;
+    },
+    async verifyRegisterOtp(email, otp){ return authenticate('/auth/register/verify', { email, otp }); },
     logout(){
       authToken = '';
       healthCache = null;
@@ -220,6 +229,40 @@ const API_BASE = 'https://worthwise-snwh.onrender.com/api';
         return JSON.parse(JSON.stringify(financialProfile));
       }
       return adaptProfile(await api('/profile', { method: 'PUT', body: JSON.stringify(patch) }));
+    },
+
+    // POST /api/auth/demo - opens a ready-made demo account (no signup). The browser keeps its demo token so
+    // clicking "Try demo" again resumes the SAME demo account (and its remaining analyses) instead of making a new one.
+    async tryDemo() {
+      const saved = localStorage.getItem('ww_demo_token');
+      if (saved) {
+        try {
+          const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${saved}` } });
+          if (res.ok) {
+            authToken = saved;
+            localStorage.setItem('spendwise_token', saved);
+            return await res.json();
+          }
+        } catch (_) { /* fall through to a new demo */ }
+        localStorage.removeItem('ww_demo_token');
+      }
+      const res = await fetch(`${API_BASE}/auth/demo`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      if (!res.ok) {
+        let msg = 'Could not start the demo. Please try again.';
+        try { msg = (await res.json()).error || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+      const data = await res.json();
+      authToken = data.token;
+      localStorage.setItem('spendwise_token', authToken);
+      localStorage.setItem('ww_demo_token', authToken);
+      return data.user;
+    },
+
+    // GET /api/usage
+    async getApiUsage() {
+      if (!isAuthenticated()) return null;
+      return await api('/usage');
     },
 
     // GET /api/goals
@@ -327,6 +370,13 @@ const API_BASE = 'https://worthwise-snwh.onrender.com/api';
 // ---- Market research results renderer ------------------------------------
 // Kept outside SpendWiseAPI because the Analyze results UI calls this directly.
 function marketResearchHTML(mr, purchase, analysis){
+  if (analysis && (analysis.apiLimitsReached || []).includes('SEARCH')) {
+    return `
+      <div class="card mt-24 fade-up">
+        <h2 class="section-title">Market Research</h2>
+        <p class="section-sub">You've used all your online product searches for this month, so live market research is paused. Your decision and affordability numbers above are not affected. Searches reset next month.</p>
+      </div>`;
+  }
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeUrl = (u) => /^https?:\/\//i.test(String(u || '')) ? String(u) : '';
   const query = esc((mr && mr.query) || (purchase && purchase.name) || 'this product');
@@ -1062,6 +1112,8 @@ async function loadDashboard(){
     renderGoal(goals[0] || null);
     renderDecisions(decisions);
     renderPlanned(planned);
+    // Separate request: if it fails, the rest of the dashboard still works.
+    SpendWiseAPI.getApiUsage().then(renderApiUsage).catch(() => renderApiUsage(null));
   } catch (err) {
     console.error('Failed to load dashboard from backend:', err);
     const greeting = document.getElementById('greeting');
@@ -1203,6 +1255,32 @@ function renderHealth(user, profile){
 }
 
 function cap(s){ return s.charAt(0) + s.slice(1).toLowerCase(); }
+
+function renderApiUsage(usage){
+  const el = document.getElementById('api-usage-card');
+  if (!el) return;
+  if (!usage || !Array.isArray(usage.apis)) {
+    el.innerHTML = '<h2 class="section-title">API Usage</h2><p class="section-sub" style="margin-bottom:0;">Usage could not be loaded right now.</p>';
+    return;
+  }
+  const resets = usage.resetsOn ? new Date(usage.resetsOn + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long' }) : 'next month';
+  const rows = usage.apis.map(a => {
+    const pct = a.limit > 0 ? Math.min(100, Math.round(a.used / a.limit * 100)) : 100;
+    const done = a.remaining <= 0;
+    return `
+      <div style="margin-top:16px;">
+        <div class="flex-between" style="margin-bottom:8px; gap:12px;">
+          <strong style="font-size:14.5px;">${a.label}</strong>
+          <span class="num" style="font-size:13.5px; ${done ? 'color:var(--skip); font-weight:600;' : ''}">${a.used} / ${a.limit} used${done ? ' · limit reached' : ` · ${a.remaining} left`}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%; ${done ? 'background:var(--skip);' : ''}"></div></div>
+      </div>`;
+  }).join('');
+  el.innerHTML = `
+    <h2 class="section-title">API Usage This Month</h2>
+    <p class="section-sub" style="margin-bottom:0;">Your purchase decisions are always calculated. Only the AI explanation and live product search are limited, and they reset on ${resets}.</p>
+    ${rows}`;
+}
 
 function renderGoal(goal){
   const el = document.getElementById('goal-card');
@@ -1452,6 +1530,7 @@ function emptyState(title, body){
     stepResults.style.display = 'block';
     renderResults(currentPurchase, currentProfile, currentGoal, analysisRaw, narrative);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.refreshDemoBanner) window.refreshDemoBanner();
   });
 
   function prefillStep1(p){
@@ -1608,6 +1687,7 @@ function emptyState(title, body){
           <span class="badge-ai">🤖 AI take</span>
         </div>
         <p class="ai-response-text" id="ai-response-text"></p>
+        ${(analysis.apiLimitsReached || []).includes('AI') ? '<p class="muted" style="font-size:13px; margin-top:10px;">You\'ve used all your AI explanations for this month, so this is our standard explanation. The decision itself is calculated the same way. AI explanations reset next month.</p>' : ''}
       </div>
 
       <div class="card mt-24 fade-up">
@@ -2085,6 +2165,28 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('click', () => switchAuthTab(el.dataset.authTab));
   });
 
+  // "Try demo" buttons (landing hero + login/register panels): open the pre-filled demo account on the Analyze page.
+  document.querySelectorAll('[data-try-demo]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (SpendWiseAPI.isAuthenticated()) { window.location.hash = '#/dashboard'; return; } // already signed in
+      const original = btn.textContent;
+      btn.textContent = 'Opening demo...';
+      btn.style.pointerEvents = 'none';
+      if (status) status.textContent = '';
+      try {
+        await SpendWiseAPI.tryDemo();
+        window.location.hash = '#/analyze';
+        window.location.reload();
+      } catch (err) {
+        btn.textContent = original;
+        btn.style.pointerEvents = '';
+        if (status) { status.textContent = err.message || 'Could not start the demo.'; }
+        else alert(err.message || 'Could not start the demo.');
+      }
+    });
+  });
+
   loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     status.textContent = 'Logging in...';
@@ -2096,21 +2198,72 @@ document.addEventListener('DOMContentLoaded', () => {
       status.textContent = err.message || 'Login failed';
     }
   });
+  // ---- Signup with email OTP ----
+  const otpForm = document.getElementById('otp-form');
+  let pendingEmail = '';
+  let resendTimer = null;
+
+  function startResendCountdown(seconds){
+    const link = document.getElementById('otp-resend');
+    clearInterval(resendTimer);
+    let left = seconds;
+    const tick = () => {
+      if (left > 0) { link.textContent = `Resend code in ${left}s`; link.style.pointerEvents = 'none'; link.style.opacity = '.6'; left--; }
+      else { clearInterval(resendTimer); link.textContent = 'Resend code'; link.style.pointerEvents = ''; link.style.opacity = ''; }
+    };
+    tick();
+    resendTimer = setInterval(tick, 1000);
+  }
+  function showOtpStep(show){
+    if (registerForm) { registerForm.hidden = show; registerForm.style.display = show ? 'none' : ''; }
+    if (otpForm) { otpForm.hidden = !show; otpForm.style.display = show ? '' : 'none'; }
+    if (show) document.getElementById('otp-code').focus();
+  }
+  async function sendOtp(){
+    const email = document.getElementById('register-email').value.trim();
+    const res = await SpendWiseAPI.requestRegisterOtp(
+      email,
+      document.getElementById('register-password').value,
+      document.getElementById('register-name').value,
+      document.getElementById('register-gender').value
+    );
+    pendingEmail = email;
+    document.getElementById('otp-info').textContent = `${res.message} It expires in ${res.expiresInMinutes} minutes. Check your spam folder too.`;
+    showOtpStep(true);
+    startResendCountdown(res.resendAfterSeconds || 60);
+  }
+
   registerForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    status.textContent = 'Creating account...';
+    status.textContent = 'Sending verification code...';
     try {
-      currentUserCache = await SpendWiseAPI.register(
-        document.getElementById('register-email').value,
-        document.getElementById('register-password').value,
-        document.getElementById('register-name').value,
-        document.getElementById('register-gender').value
-      );
+      await sendOtp();
+      status.textContent = '';
+    } catch (err) {
+      status.textContent = err.message || 'Could not send the verification code';
+    }
+  });
+  otpForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    status.textContent = 'Verifying...';
+    try {
+      currentUserCache = await SpendWiseAPI.verifyRegisterOtp(pendingEmail, document.getElementById('otp-code').value.trim());
       window.location.hash = '#/profile';
       window.location.reload();
     } catch (err) {
-      status.textContent = err.message || 'Registration failed';
+      status.textContent = err.message || 'Verification failed';
     }
+  });
+  document.getElementById('otp-resend')?.addEventListener('click', async () => {
+    status.textContent = 'Sending a new code...';
+    try { await sendOtp(); status.textContent = 'A new code was sent.'; }
+    catch (err) { status.textContent = err.message || 'Could not resend the code'; }
+  });
+  document.getElementById('otp-change')?.addEventListener('click', () => {
+    clearInterval(resendTimer);
+    document.getElementById('otp-code').value = '';
+    status.textContent = '';
+    showOtpStep(false);
   });
 });
 
@@ -2479,3 +2632,40 @@ document.addEventListener('DOMContentLoaded', () => {
     io.observe(el);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Demo mode: a small floating banner showing how many demo analyses are left,
+// and a ready-made purchase pre-filled on the Analyze page so the visitor only has to click through.
+// ---------------------------------------------------------------------------
+async function refreshDemoBanner(){
+  let el = document.getElementById('demo-banner');
+  if (!SpendWiseAPI.isAuthenticated()) { if (el) el.remove(); return; }
+  let user;
+  try { user = await SpendWiseAPI.getCurrentUser(); } catch (_) { return; }
+  if (!user || !user.demo) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'demo-banner';
+    el.style.cssText = 'position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:300; max-width:calc(100vw - 24px); padding:9px 18px; border-radius:999px; background:var(--pine,#1f6f5a); color:#fff; font-size:13.5px; font-weight:600; text-align:center; box-shadow:0 6px 20px rgba(0,0,0,.25);';
+    document.body.appendChild(el);
+  }
+  const left = Number(user.demoEvaluationsLeft || 0);
+  el.innerHTML = (left > 0
+    ? `Demo mode &middot; ${left} of 2 analyses left`
+    : 'Demo finished &middot; both analyses used')
+    + ' &middot; <a href="javascript:void(0)" id="demo-signup" style="color:#fff; text-decoration:underline;">Create a free account</a>';
+  document.getElementById('demo-signup').onclick = () => { SpendWiseAPI.logout(); window.location.reload(); };
+
+  // Pre-fill a sample purchase so the visitor can just press Continue and then Analyze.
+  const name = document.getElementById('p-name');
+  const price = document.getElementById('p-price');
+  if (name && price && !name.value && !price.value && left > 0) {
+    name.value = 'Sony WH-1000XM5 Headphones';
+    const cat = document.getElementById('p-category'); if (cat) cat.value = 'Electronics';
+    price.value = 25000;
+    const reason = document.getElementById('p-reason'); if (reason) reason.value = 'For my daily commute and for focusing while studying.';
+  }
+}
+window.refreshDemoBanner = refreshDemoBanner;
+document.addEventListener('DOMContentLoaded', refreshDemoBanner);
+window.addEventListener('hashchange', refreshDemoBanner);

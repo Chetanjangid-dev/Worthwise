@@ -23,8 +23,12 @@ public class PurchaseService {
   private final DecisionEngine engine;
   private final AIExplanationService ai;
   private final MarketResearchService research;
+  private final ApiUsageService usage;
+  private final DemoService demo;
   private  final UserContext users;
-  public PurchaseService(UserContext users,PurchaseDecisionRepository decisions, ProfileService profiles, GoalService goals, DecisionEngine engine, AIExplanationService ai, MarketResearchService research) {
+  public PurchaseService(UserContext users,PurchaseDecisionRepository decisions, ProfileService profiles, GoalService goals, DecisionEngine engine, AIExplanationService ai, MarketResearchService research, ApiUsageService usage, DemoService demo) {
+    this.usage = usage;
+    this.demo = demo;
     this.decisions = decisions; this.profiles = profiles; this.goals = goals; this.engine = engine; this.ai = ai; this.research = research;
     this.users=users;
   }
@@ -43,6 +47,7 @@ public class PurchaseService {
       if (req.downPayment().compareTo(req.price()) > 0)
         throw new ApiException(HttpStatus.BAD_REQUEST, "Down payment cannot be more than the product price.");
     }
+    demo.consumeEvaluation(user); // demo accounts get only a few analyses (no-op for real accounts)
     // One-time purchases carry no EMI/down-payment data, so it can never leak into the maths.
     PurchaseRequest normalized = new PurchaseRequest(
         req.productName() == null || req.productName().isBlank() ? req.name() : req.productName(),
@@ -51,12 +56,20 @@ public class PurchaseService {
         emi ? req.downPayment() : BigDecimal.ZERO);
     FinancialProfile profile = profiles.entity(user);
     DecisionResponse calculated = engine.evaluate(normalized, profile, goals.active(user));
-    String explanation = ai.explain(normalized, profiles.toResponse(profile), calculated);
+    // The deterministic result above is always computed, for every evaluate / re-evaluate, with no limit.
+    // Only the two paid API calls below are limited per user per month; once a limit is used up, that part is skipped
+    // and the user just gets the non-API result (built-in explanation text / no market research).
+    List<String> limitsReached = new ArrayList<>();
+    boolean aiAllowed = ai.isEnabled() && usage.tryConsume(user, ApiUsageService.Api.AI);
+    if (ai.isEnabled() && !aiAllowed) limitsReached.add("AI");
+    String explanation = aiAllowed ? ai.explain(normalized, profiles.toResponse(profile), calculated) : calculated.aiExplanation();
     // Never throws: returns null if SerpApi is unavailable, so the financial analysis still succeeds.
     BigDecimal safeMax = calculated.safePriceRange() == null ? null : calculated.safePriceRange().get("max");
-    MarketResearchResponse market = research.research(normalized, safeMax);
+    boolean searchAllowed = research.isEnabled() && usage.tryConsume(user, ApiUsageService.Api.GOOGLE);
+    if (research.isEnabled() && !searchAllowed) limitsReached.add("SEARCH");
+    MarketResearchResponse market = searchAllowed ? research.research(normalized, safeMax) : null;
     PurchaseDecision saved = save(user, normalized, calculated, explanation);
-    return withId(saved, calculated, explanation, market);
+    return withId(saved, calculated, explanation, market, limitsReached);
   }
     @Transactional 
     public DecisionResponse revaluate(AppUser user, UUID id) {
@@ -154,11 +167,11 @@ public class PurchaseService {
         p.getReason(), p.getCreatedAt().atZone(ZoneId.systemDefault()).toLocalDate().toString(),
         p.getMonthlyEmi(), p.getDurationMonths(), p.getProductUrl(), nz(p.getDownPayment()), p.isPurchased()), r);
   }
-  private DecisionResponse withId(PurchaseDecision p, DecisionResponse r, String explanation, MarketResearchResponse market) {
+  private DecisionResponse withId(PurchaseDecision p, DecisionResponse r, String explanation, MarketResearchResponse market, List<String> limitsReached) {
     return new DecisionResponse(p.getId().toString(), r.decision(), r.score(), r.affordability(), r.financialImpact(), r.goalImpact(),
         r.purchasePrice(), r.savingsAfterPurchase(), r.emergencyFundTarget(), r.monthlySurplusBefore(), r.monthlySurplusAfterPurchase(),
         r.recommendedWaitMonths(), r.estimatedPurchaseDate(), r.goalCompletionDate(), r.goalDelayMonths(), r.safePriceRange(), r.reasonCodes(),
-        r.reasons(), r.alternatives(), r.actionPlan(), explanation, market);
+        r.reasons(), r.alternatives(), r.actionPlan(), explanation, market, limitsReached);
   }
   private BigDecimal nz(BigDecimal n){ return n == null ? BigDecimal.ZERO : n; }
 }

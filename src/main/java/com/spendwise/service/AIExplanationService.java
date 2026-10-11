@@ -30,6 +30,8 @@ public class AIExplanationService {
     this.model = model;
   }
 
+  public boolean isEnabled() { return apiKey != null && !apiKey.isBlank(); }
+
   public String explain(PurchaseRequest purchase, ProfileResponse profile, DecisionResponse decision) {
     // The user should never see technical/config messages, so failures are only logged
     // and we quietly fall back to the base text.

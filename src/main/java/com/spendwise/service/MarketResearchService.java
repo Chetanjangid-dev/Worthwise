@@ -33,6 +33,8 @@ public class MarketResearchService {
     this.apiKey = apiKey;
   }
 
+  public boolean isEnabled() { return apiKey != null && !apiKey.isBlank(); }
+
   public MarketResearchResponse research(PurchaseRequest purchase, BigDecimal safeMaxPrice) {
     if (apiKey == null || apiKey.isBlank()) {
       log.warn("[Research] SKIPPED — SERPAPI_API_KEY is not configured.");
