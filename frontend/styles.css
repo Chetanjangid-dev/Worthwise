@@ -1639,3 +1639,6 @@ html[data-theme="light"] .landing-nav{ background:rgba(255,255,255,0.8); }
 .tw-caret::after{ content:''; position:absolute; left:1px; top:0; width:2px; height:100%; background:var(--ink); border-radius:1px; animation:twBlink2 1s steps(1) infinite; }
 .tw-caret.tw-done::after{ opacity:0; animation:none; transition:opacity .6s ease; }
 @keyframes twBlink2{ 0%,50%{ opacity:1; } 50.01%,100%{ opacity:0; } }
+
+/* hide the scrolling decisions table on phones; laptop/desktop keep it */
+@media (max-width:640px){ .tilt-section{ display:none; } }
