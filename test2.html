@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorthyBot - Cool Mascot Test Area</title>
+  <style>
+    :root {
+      --bg-dark: #090c15;
+      --card-bg: rgba(15, 23, 42, 0.8);
+      --border-cyber: #38bdf8;
+      --neon-pulse: rgba(56, 189, 248, 0.4);
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 85%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 12px);
+    }
+
+    .tester-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 32px;
+      padding: 48px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.8),
+                  inset 0 0 24px rgba(56, 189, 248, 0.05);
+      position: relative;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    /* Cyber Backlighting Glow */
+    .glow-aura {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Speech Bubble */
+    .speech-bubble {
+      background: #111827;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: var(--text-main);
+      padding: 12px 20px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      position: relative;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+      z-index: 5;
+    }
+
+    .speech-bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 10px;
+      height: 10px;
+      background: #111827;
+      border-right: 1px solid rgba(56, 189, 248, 0.4);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .speech-bubble.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Mascot Interactive Trigger */
+    .mascot-trigger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      outline: none;
+      position: relative;
+      z-index: 2;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mascot-container {
+      width: 150px;
+      height: 175px;
+      animation: baseFloat 4.2s ease-in-out infinite;
+      transform-origin: center bottom;
+      will-change: transform;
+    }
+
+    /* --- Hover Action: Sudden energetic JUMP --- */
+    .mascot-trigger:hover .mascot-container {
+      animation: hoverJump 0.7s cubic-bezier(0.25, 1, 0.50, 1) forwards !important;
+    }
+
+    /* Active click pop */
+    .mascot-trigger:active .mascot-container {
+      transform: scale(0.9, 1.1) translateY(-25px);
+    }
+
+    /* Cyber Subsystem Animations */
+    .mascot-body-group {
+      animation: subBreathe 3.4s ease-in-out infinite;
+      transform-origin: 55px 95px;
+    }
+
+    /* Rapid Blinking Eye Animation (happens every 2.5s) */
+    .glowing-eyes {
+      animation: blinkEyes 2.5s ease-in-out infinite;
+      transform-origin: 55px 48px;
+    }
+
+    /* 5-second interval HAND beckoning ("shake to attract") */
+    .cyber-arm-right {
+      animation: beckonComeHere 5s ease-in-out infinite;
+      transform-origin: 82px 76px; /* Anchor shoulder precisely */
+    }
+
+    /* Neon Cyber Glow overlay */
+    .neon-pulse-effects {
+      filter: drop-shadow(0 0 3px #38bdf8) drop-shadow(0 0 7px rgba(56, 189, 248, 0.7));
+      animation: subGlow 2.5s ease-in-out infinite alternate;
+    }
+
+    .digital-visor-scanlines {
+      animation: scanEffect 6s linear infinite;
+    }
+
+    /* Cyber particles & thruster underbody */
+    .cyber-particles {
+      animation: sparksBreathe 2s ease-in-out infinite alternate;
+      transform-origin: center bottom;
+    }
+
+    /* --- Keyframes --- */
+    @keyframes baseFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+
+    /* The 'Cyber Jump' when hovered */
+    @keyframes hoverJump {
+      0% { transform: translateY(0) scaleY(1); }
+      15% { transform: translateY(6px) scale(1.15, 0.8); } /* Squat */
+      42% { transform: translateY(-38px) scale(0.9, 1.18); } /* High Spring upwards */
+      70% { transform: translateY(3px) scale(1.06, 0.92); } /* Land Squash */
+      85% { transform: translateY(-6px) scale(0.98, 1.02); } /* Tiny settle */
+      100% { transform: translateY(-3px) scale(1); } /* Remain hovering gracefully */
+    }
+
+    @keyframes subBreathe {
+      0%, 100% { transform: scale(1) translateY(0); }
+      50% { transform: scale(1.025, 0.98) translateY(0.5px); }
+    }
+
+    /* Eye Blinking (0.1s blink, loops every 2.5s) */
+    @keyframes blinkEyes {
+      0%, 93%, 97%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.08); }
+    }
+
+    /* Beckoning "Attracting" Right Arm Loop (Runs once every 5 seconds) */
+    @keyframes beckonComeHere {
+      0%, 75%, 100% { transform: rotate(0deg); } /* Relaxed resting (0s - 3.75s) */
+      78% { transform: rotate(-50deg); } /* Raise arm to summon */
+      81% { transform: rotate(-25deg); } /* Invite/Come back-and-forth shake (1) */
+      83% { transform: rotate(-48deg); } 
+      85% { transform: rotate(-25deg); } /* Wave shake (2) */
+      87% { transform: rotate(-48deg); }
+      89% { transform: rotate(-25deg); } /* Wave shake (3) */
+      92% { transform: rotate(-50deg); }
+      95% { transform: rotate(0deg); } /* Return to side panel */
+    }
+
+    @keyframes subGlow {
+      0% { filter: drop-shadow(0 0 2px #38bdf8) drop-shadow(0 0 5px rgba(56, 189, 248, 0.45)); }
+      100% { filter: drop-shadow(0 0 5px #7dd3fc) drop-shadow(0 0 11px rgba(125, 211, 252, 0.85)); }
+    }
+
+    @keyframes scanEffect {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(2px); }
+    }
+
+    @keyframes sparksBreathe {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      100% { transform: scale(1.15); opacity: 0.95; }
+    }
+
+    .interactive-hint {
+      margin-top: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-align: center;
+      transition: color 0.3s;
+    }
+
+    .mascot-trigger:hover ~ .interactive-hint {
+      color: var(--border-cyber);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tester-card">
+    <div class="glow-aura"></div>
+
+    <!-- Live reactive chat dialogue bubble -->
+    <div id="dialogue" class="speech-bubble">
+      I see you there! Hover or Click me! ⚡
+    </div>
+
+    <!-- Upgraded "Cooler" Blue Robot -->
+    <button id="mascotBtn" class="mascot-trigger" aria-label="Worthy Mascot">
+      <div id="mascot" class="mascot-container">
+        <svg viewBox="0 0 110 132" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; overflow: visible;">
+          
+          <!-- Thruster Exhaust Particles & Shadows -->
+          <g class="cyber-particles">
+            <!-- Pulsing Ground Glow shadow -->
+            <ellipse cx="55" cy="122" rx="24" ry="4" fill="#020617" fill-opacity="0.45" />
+            <!-- Tiny Energy Particles -->
+            <circle cx="48" cy="115" r="1.5" fill="#38bdf8" opacity="0.6" />
+            <circle cx="63" cy="118" r="1.2" fill="#38bdf8" opacity="0.5" />
+            <circle cx="39" cy="112" r="1" fill="#4338ca" opacity="0.4" />
+            <circle cx="71" cy="113" r="1.5" fill="#4338ca" opacity="0.45" />
+          </g>
+
+          <g class="mascot-body-group">
+            <!-- Feet -->
+            <rect x="36" y="99" width="13" height="15" rx="5" fill="#3c5aa6" stroke="#101525" stroke-width="2.5" />
+            <rect x="38" y="101" width="9" height="11" rx="3" fill="#5c84ec" />
+
+            <rect x="61" y="99" width="13" height="15" rx="5" fill="#3c5aa6" stroke="#101525" stroke-width="2.5" />
+            <rect x="63" y="101" width="9" height="11" rx="3" fill="#5c84ec" />
+
+            <!-- Left Arm (Regular Static/Subtle movement) -->
+            <g>
+              <rect x="18" y="74" width="11" height="23" rx="5.5" fill="#3c5aa6" stroke="#101525" stroke-width="2.5" />
+              <rect x="20" y="76" width="7" height="19" rx="3.5" fill="#5c84ec" />
+            </g>
+
+            <!-- Torso Assembly -->
+            <rect x="28" y="67" width="54" height="40" rx="16" fill="#3c5aa6" stroke="#101525" stroke-width="2.8" />
+            <rect x="30" y="69" width="50" height="36" rx="14" fill="#5c84ec" />
+            <!-- Upper Torso cyber panel shading shadow line -->
+            <path d="M37 72C48 70.5 62 70.5 73 72" stroke="#9bbafc" stroke-width="2.2" stroke-linecap="round" />
+
+            <!-- Cybernetic Headset Antennas (Upgrade: Cooler ears) -->
+            <g>
+              <!-- Left Cyber Headset -->
+              <rect x="5" y="47" width="6" height="14" rx="2" fill="#3c5aa6" stroke="#101525" stroke-width="2.5" />
+              <circle cx="8" cy="54" r="1.5" fill="#38bdf8" class="neon-pulse-effects" />
+              <!-- Right Cyber Headset -->
+              <rect x="99" y="47" width="6" height="14" rx="2" fill="#3c5aa6" stroke="#101525" stroke-width="2.5" />
+              <circle cx="102" cy="54" r="1.5" fill="#38bdf8" class="neon-pulse-effects" />
+            </g>
+
+            <!-- Cybernetic Right Arm (Shake & Beckon animation) -->
+            <g class="cyber-arm-right">
+              <rect x="80" y="73" width="12" height="25" rx="6" fill="#3a56a0" stroke="#101525" stroke-width="2.5" />
+              <rect x="82" y="75" width="8" height="21" rx="4" fill="#5c84ec" />
+              <!-- Hand tip highlight -->
+              <circle cx="86" cy="92" r="2.5" fill="#9bbafc" />
+            </g>
+
+            <!-- Animated Chest Emblem with Cyber Pulsing Diodes -->
+            <g class="neon-pulse-effects">
+              <!-- Code Prompt '>_' -->
+              <path d="M47 83L52 87.5L47 92" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+              <!-- Cursor -->
+              <rect x="56" y="89.5" width="8" height="3" rx="1" fill="#ffffff" />
+            </g>
+
+            <!-- Fluffy Cyber Cloud Head Structure -->
+            <path
+              d="M22 39C14 39 10 47 10 56C10 66 18 72 28 72H82C92 72 100 66 100 56C100 47 96 39 88 39C88 27 80 17 68 17C64 17 60 19 57 22C53 13 43 9 34 13C26 16 22 26 22 39Z"
+              fill="#3c5aa6"
+              stroke="#101525"
+              stroke-width="2.8"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M24 40C17 40 13 47 13 55C13 64 20 69 29 69H81C90 69 97 64 97 55C97 47 93 40 86 40C86 29 78 20 67 20C63 20 59 22 56 25C52 16 43 12 35 16C28 19 24 28 24 40Z"
+              fill="#5c84ec"
+            />
+            <!-- Cybernetic accent lighting panels -->
+            <path d="M32 19.5C38 16.5 47 17.5 51.5 24" stroke="#a0beff" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M59.5 23.5C65 19.5 73 21.5 79.5 27.5" stroke="#a0beff" stroke-width="2.5" stroke-linecap="round" />
+
+            <!-- Visor Unit -->
+            <rect x="25" y="27" width="60" height="42" rx="12" fill="#0d1123" stroke="#101525" stroke-width="2.8" />
+            <!-- Inside Screen Area -->
+            <rect x="27.5" y="29.5" width="55" height="37" rx="9" fill="#131932" />
+
+            <!-- Digital Holographic Bezel & Tech Elements -->
+            <g class="digital-visor-scanlines" opacity="0.4">
+              <!-- Scan lines & corners indicators -->
+              <line x1="31" y1="33" x2="79" y2="33" stroke="#38bdf8" stroke-width="0.7" stroke-dasharray="2 3" />
+              <line x1="31" y1="41" x2="79" y2="41" stroke="#38bdf8" stroke-width="0.7" stroke-opacity="0.3" />
+              <line x1="31" y1="49" x2="79" y2="49" stroke="#38bdf8" stroke-width="0.7" stroke-opacity="0.3" />
+              <circle cx="31" cy="33" r="1" fill="#38bdf8" />
+              <circle cx="79" cy="33" r="1" fill="#38bdf8" />
+            </g>
+
+            <!-- Holographic Visor Reflection Flare -->
+            <path d="M31 33.5C40 32 50 32 58 33.5" stroke="#1e2954" stroke-width="1.8" stroke-linecap="round" />
+
+            <!-- Blinking Cyber Eyes (Adjusted for "Cooler" Curved Display Glow) -->
+            <g class="glowing-eyes neon-pulse-effects">
+              <path d="M38.5 48C41.5 52.5 46 52.5 49 48" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" fill="none" />
+              <path d="M61 48C64 52.5 68.5 52.5 71.5 48" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" fill="none" />
+            </g>
+          </g>
+        </svg>
+      </div>
+    </button>
+
+    <p class="interactive-hint">Click & Hover to interact</p>
+  </div>
+
+  <script>
+    const mascotBtn = document.getElementById('mascotBtn');
+    const mascot = document.getElementById('mascot');
+    const dialogue = document.getElementById('dialogue');
+
+    // Fun responses
+    const customChatLines = [
+      "I see you there! Hover or Click me! ⚡",
+      "Let's grow that net worth! 📈",
+      "Look at me go! Space-gravity jump active! 🚀",
+      "Analyzing smart budget targets... 🦾",
+      "Need to check my telemetry stats? 📊",
+      "You got this! Tap me for Chatbot tips 💬"
+    ];
+    let count = 0;
+    let timeout;
+
+    mascotBtn.addEventListener('click', () => {
+      // Create extra mechanical landing click effects
+      mascot.style.transition = 'none';
+      mascot.style.transform = 'translateY(-30px) scale(0.85, 1.2)';
+      
+      // Force repaint to make dynamic squash visible
+      void mascot.offsetWidth;
+      
+      mascot.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      mascot.style.transform = '';
+
+      // Set chat bubble
+      count = (count + 1) % customChatLines.length;
+      dialogue.textContent = customChatLines[count];
+      dialogue.classList.add('visible');
+
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        dialogue.classList.remove('visible');
+      }, 3500);
+    });
+
+    // Make hint change state
+    mascotBtn.addEventListener('mouseenter', () => {
+      if (!dialogue.classList.contains('visible')) {
+        dialogue.textContent = "C'mon, give it a tap! ⚡";
+        dialogue.classList.add('visible');
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          dialogue.classList.remove('visible');
+        }, 1800);
+      }
+    });
+  </script>
+</body>
+</html>
