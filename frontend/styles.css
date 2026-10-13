@@ -1642,3 +1642,11 @@ html[data-theme="light"] .landing-nav{ background:rgba(255,255,255,0.8); }
 
 /* hide the scrolling decisions table on phones; laptop/desktop keep it */
 @media (max-width:640px){ .tilt-section{ display:none; } }
+
+/* Mobile-only: animated product showcase (separate service embedded via iframe).
+   Desktop keeps the scrolling table (.tilt-section), so this stays hidden above 640px. */
+.mflow{ display:none; }
+@media (max-width:640px){
+  .mflow{ display:block; margin:6px -4px 0; padding:0; overflow:hidden; }
+  .mflow-frame{ display:block; width:100%; height:470px; border:0; background:#050809; border-radius:var(--radius-lg); }
+}
