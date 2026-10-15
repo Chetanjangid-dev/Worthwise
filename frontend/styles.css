@@ -1650,3 +1650,9 @@ html[data-theme="light"] .landing-nav{ background:rgba(255,255,255,0.8); }
   .mflow{ display:block; margin:6px -4px 0; padding:0; overflow:hidden; }
   .mflow-frame{ display:block; width:100%; height:470px; border:0; background:#050809; border-radius:var(--radius-lg); }
 }
+/* FIX: auth page - global `p{max-width:68ch}` pinned the centered subtitle and
+   the status message to the left; give them auto side margins so they center
+   under/over the login card. */
+#view-auth .page-header .page-sub,
+#view-auth #auth-status{ margin-left:auto; margin-right:auto; text-align:center; }
+#view-auth #auth-status{ max-width:min(68ch, 100%); }

@@ -100,8 +100,8 @@ const SpendWiseAPI = (() => {
 
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
   // Local machine -> local backend. Anywhere else (Vercel etc.) -> Render backend (no trailing slash).
-const API_BASE = "https://worthwise-snwh.onrender.com/api";
-//  const API_BASE   ="http://localhost:5000/api";
+//const API_BASE = "https://worthwise-snwh.onrender.com/api";
+  const API_BASE   ="http://localhost:5000/api";
   
 
   let authToken = localStorage.getItem('spendwise_token') || '';
